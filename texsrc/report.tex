@@ -1,6 +1,9 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage[backend=bibtex]{biblatex}
+\bibliography{sources.bib}
+
 \title{Team 10 Project}
 \author{
 	\begin{tabular}{rl}
@@ -14,6 +17,12 @@
 \begin{document}
 	\maketitle
 	
+	rrt star saken~\cite{rrt_star_smart}
+	
+	rrt multi agent~\cite{multi_agent_rrt}
+	
+	multi agent tsp~\cite{multi_agent_tsp}
+	
 	\begin{figure}[h]
 		\centering
 		\vspace*{2cm}
@@ -21,4 +30,6 @@
 	\end{figure}
 	
 	\include{parts/introduction}
+	
+\printbibliography{}
 \end{document}
