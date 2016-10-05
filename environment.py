@@ -49,6 +49,13 @@ def collides(p):
             return True
     return False
 
+def collides_rect(x, y, w, h):
+    "checks if a rectangle collides with the walls"
+    for i in walls:
+        if i.colliderect(pygame.Rect([x - w/h, y - h/2, w, h])):
+            return True
+    return False
+
 def new_coord():
     "return a new coordinate"
     while True:
@@ -77,7 +84,7 @@ def obstaclefree(p1, p2):
     for ti in t:
         x = p1[0] + (p2[0] - p1[0]) * ti;
         y = p1[1] + (p2[1] - p1[1]) * ti;
-        if collides((x,y)):
+        if collides_rect(x, y, 10, 10):
             return False
 
     return True
@@ -145,9 +152,7 @@ def main():
             curr_node = goal_node.parent
             while curr_node.parent != None:
                 if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
-                    print("Before ", curr_node.parent.coord[0], " ", curr_node.parent.coord[1])
                     curr_node.parent = curr_node.parent.parent
-                    print("After ", curr_node.parent.coord[0], " ", curr_node.parent.coord[1])
                 else:
                     curr_node = curr_node.parent
 
