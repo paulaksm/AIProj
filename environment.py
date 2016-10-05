@@ -13,7 +13,7 @@ import random
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 5
+N_TRASHCANS = 1
 N_ROBOTS = 1
 MAX_NODES = 10000
 
@@ -71,6 +71,17 @@ def new_step(p1, p2):
         theta = atan2(p2[1]-p1[1],p2[0]-p1[0])
         return p1[0] + 5.0*cos(theta), p1[1] + 5.0*sin(theta)
 
+def obstaclefree(p1, p2):
+    "checks if there are no walls between two points"
+    t = np.arange(0, 1, 0.05)
+    for ti in t:
+        x = p1[0] + (p2[0] - p1[0]) * ti;
+        y = p1[1] + (p2[1] - p1[1]) * ti;
+        if collides((x,y)):
+            return False
+
+    return True
+
 def main():
     pygame.init()
     
@@ -86,8 +97,10 @@ def main():
     trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
     for i in range(N_TRASHCANS):
         while collides((trashcans[i][0], trashcans[i][1])):
-            print(trashcans[1][0])
             trashcans[i] = np.random.randint(50, 600-50,2)
+
+    "for debug, static trashcan behind wall"
+    #trashcans[0] = (500, 180)
 
     running = True
     goal = False
@@ -128,6 +141,15 @@ def main():
                     curr_state = 'goal_found'
         
         if curr_state == 'goal_found':
+
+            curr_node = goal_node.parent
+            while curr_node.parent != None:
+                if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
+                    print("Before ", curr_node.parent.coord[0], " ", curr_node.parent.coord[1])
+                    curr_node.parent = curr_node.parent.parent
+                    print("After ", curr_node.parent.coord[0], " ", curr_node.parent.coord[1])
+                else:
+                    curr_node = curr_node.parent
 
             curr_node = goal_node.parent
             while curr_node.parent != None:
