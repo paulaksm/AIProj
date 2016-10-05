@@ -42,13 +42,6 @@ def init_map():
     for i in walls:
         pygame.draw.rect(screen, (100,100,100), i)
 
-def collides_rect(p):
-    "checks if there is a collision with the walls"
-    for i in walls:
-        if i.collidepoint(p):
-            return True
-    return False
-
 def collides(p):
     "checks if a rectangle collides with the walls"
     for i in walls:
