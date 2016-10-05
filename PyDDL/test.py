@@ -17,21 +17,21 @@ def problem(verbose):
             "move",
             # P1 and P2 are the parameters the solver will tweak.
             parameters=(
+                ("agent", "A"),
                 ("position", "P1"),
                 ("position", "P2"),
             ),
             # Agent(a), Adjacent(P1, P2), At(a, P1), Blank(P2)
             preconditions=(
-                ("agent", "a"),
                 ("adjacent", "P1", "P2"),
-                ("at", "a", "P1"),
+                ("at", "A", "P1"),
                 ("blank", "P2"),
             ),
             # At(a, P2), Blank(P1), not(At(a, P1)), not(Blank(P2))
             effects=(
-                ("at", "a", "P2"),
+                ("at", "A", "P2"),
                 ("blank", "P1"),
-                neg(("at", "a", "P1")),
+                neg(("at", "A", "P1")),
                 neg(("blank", "P2")),
             )
         ),
@@ -39,13 +39,14 @@ def problem(verbose):
     problem = Problem(
         domain,
         {
-            #These are the possible positions
+            # type          values
+            "agent" : ("a","b"),
             "position" : (1,2,3,4,5,6,7,8,9),
         },
         init=(
             # initial KB for our problem
-            ("agent", "a"),
             ("at", "a", 1),
+            ("at", "b", 9),
             ("blank", 2),
             ("blank", 3),
             ("blank", 4),
@@ -53,7 +54,6 @@ def problem(verbose):
             ("blank", 6),
             ("blank", 7),
             ("blank", 8),
-            ("blank", 9),
             ("adjacent", 1, 2),
             ("adjacent", 1, 4),
             ("adjacent", 2, 1),
@@ -81,6 +81,7 @@ def problem(verbose):
         ),
         goal=(
             ("at", "a", 9),
+            ("at", "b", 1),
         )
     )
 
