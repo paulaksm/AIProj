@@ -15,6 +15,8 @@ from math import cos, sin, atan2, sqrt
 SIZE = WIDTH, HEIGHT = 600, 600
 N_TRASHCANS = 1
 N_ROBOTS = 1
+ROBOT_WIDTH = 20
+ROBOT_HEIGHT = 20
 MAX_NODES = 10000
 
 screen = pygame.display.set_mode(SIZE);
@@ -45,7 +47,7 @@ def init_map():
 def collides(p):
     "checks if a rectangle collides with the walls"
     for i in walls:
-        if i.colliderect(pygame.Rect([p[0] - 10/2, p[1] - 10/2, 10, 10])):
+        if i.colliderect(pygame.Rect([p[0] - ROBOT_WIDTH/2, p[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])):
             return True
     return False
 
@@ -111,7 +113,7 @@ def main():
     goal_dist = 0
 
     robot = [300, 300]
-    objRobot = pygame.Rect([robot[0], robot[1], 10, 10])
+    objRobot = pygame.Rect([robot[0] - ROBOT_WIDTH/2, robot[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
 
     while running:
@@ -166,7 +168,7 @@ def main():
                 print("Checked trashcan", idx)
 
 
-        pygame.draw.rect(screen, (255, 255, 255), objRobot)
+        pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 running = False 
