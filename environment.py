@@ -42,17 +42,17 @@ def init_map():
     for i in walls:
         pygame.draw.rect(screen, (100,100,100), i)
 
-def collides(p):
+def collides_rect(p):
     "checks if there is a collision with the walls"
     for i in walls:
         if i.collidepoint(p):
             return True
     return False
 
-def collides_rect(x, y, w, h):
+def collides(p):
     "checks if a rectangle collides with the walls"
     for i in walls:
-        if i.colliderect(pygame.Rect([x - w/h, y - h/2, w, h])):
+        if i.colliderect(pygame.Rect([p[0] - 10/2, p[1] - 10/2, 10, 10])):
             return True
     return False
 
@@ -84,7 +84,7 @@ def obstaclefree(p1, p2):
     for ti in t:
         x = p1[0] + (p2[0] - p1[0]) * ti;
         y = p1[1] + (p2[1] - p1[1]) * ti;
-        if collides_rect(x, y, 10, 10):
+        if collides((x,y)):
             return False
 
     return True
@@ -107,7 +107,7 @@ def main():
             trashcans[i] = np.random.randint(50, 600-50,2)
 
     "for debug, static trashcan behind wall"
-    #trashcans[0] = (500, 180)
+    trashcans[0] = (500, 180)
 
     running = True
     goal = False
