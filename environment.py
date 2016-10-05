@@ -84,9 +84,10 @@ def main():
 
     "Initialize trashcans randomly"
     trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
-    for tc in trashcans:
-        while collides((tc[0], tc[1])):
-            tc = np.random.randint(50, 600-50, (1,2))
+    for i in range(N_TRASHCANS):
+        while collides((trashcans[i][0], trashcans[i][1])):
+            print(trashcans[1][0])
+            trashcans[i] = np.random.randint(50, 600-50,2)
 
     running = True
     goal = False
