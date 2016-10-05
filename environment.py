@@ -13,7 +13,7 @@ import random
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 1
+N_TRASHCANS = 5
 N_ROBOTS = 1
 MAX_NODES = 10000
 
@@ -74,20 +74,19 @@ def new_step(p1, p2):
 def main():
     pygame.init()
     
-
-    "Initialize trashcans randomly"
-    trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
-    
-    
     "Robot node (root of tree)"
     init_node = Node([300, 300], None)
     nodes = []
     nodes.append(init_node)
 
-
     init_map()
     curr_state = 'build'
 
+    "Initialize trashcans randomly"
+    trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
+    for tc in trashcans:
+        while collides((tc[0], tc[1])):
+            tc = np.random.randint(50, 600-50, (1,2))
 
     running = True
     goal = False
