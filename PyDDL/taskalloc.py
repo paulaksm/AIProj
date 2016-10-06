@@ -3,47 +3,66 @@
 from pyddl import *
 
 
-agent1 = {
-        "start": 13,
-        "paths": [([ 1, 3],    [13,  9,  5, 1, 2, 3]),
-                  ([11, 3],    [13, 14, 11, 7, 3])   ]
-         }
-agent2 = {
-        "start": 9,
-        "paths": [ ([15, 12],  [9, 13, 14, 15, 16, 12]),
-                   ([12, 15],  [9, 10, 11, 12, 16, 15]) ]
-         }
-
-
-
-def problem(agents, trashcans, verbose=True):
-    #find longest path, and set timeline accordingly
-    max_path_len = 0
-    for agent in agents:
-        paths = agent["paths"]
-        for path in paths:
-            if len(path[1]) > max_path_len:
-                max_path_len = len(path[1])
-
+def problem(verbose=True):
     domain = Domain((
-
+        Action( #allocate a time/space frame to an agent.
+            "pick-up",
+            parameters=(
+                ("agent", "A1"),
+                ("trashcan", "T1"),
+                ("trashcan", "T2"),
+            ),
+            preconditions=(
+                ("at", "A1", "T1"),
+                #neg(("checked", "T2")),
+            ),
+            effects=(
+                neg(("at", "A1", "T1")),
+                ("at", "A1", "T2"),
+                ("checked", "T2"),
+            )
+        ),
     ))
     problem = Problem(
         domain,
         {
-            "agent" : [i for i in range(len(agents))],
-            "trashcan" : [i for i in range(len(trashcans))]
+            "agent" : ("a", "b"),
+            "trashcan" : (-2, -1, 1, 2, 3, 4),
         },
+
         init=(
+            ("startpos", "a", -1),
+            ("startpos", "b", -2),
+            ("at", "a", -1),
+            ("at", "b", -2),
+            #neg(("checked", 1)),
+            #neg(("checked", 2)),
+            #neg(("checked", 3)),
+            #neg(("checked", 4)),
         ),
+
         goal=(
+                ("checked", 1),
+                ("checked", 2),
+                ("checked", 3),
+                ("checked", 4),
         )
     )
-    #domain = Domain((
-    #))
 
+    def heuristic(state):
+        checked_cans = 0
+        for p in state.predicates:
+            if p[0] == "checked":
+                checked_cans += 1
+        return checked_cans
 
+    plan = planner(problem, heuristic=heuristic, verbose=verbose)
 
+    if plan is None:
+        print("No plan!")
+    else:
+        for action in plan:
+            print(action)
 
 if __name__ == "__main__":
-    problem([agent1, agent2])
+    problem()
