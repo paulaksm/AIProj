@@ -1,9 +1,10 @@
 #! /usr/bin/env python2
 
 from pyddl import *
+from planner import *
 
 
-def problem(verbose=True):
+def problem(distancemat, verbose=True, maxplans=20):
     domain = Domain((
         Action(
             "pick-up",
@@ -52,15 +53,6 @@ def problem(verbose=True):
         )
     )
 
-    #Distances between starting positions and trash cans.
-    distancemat = [
-            [ 0, 10,  2,  4,  5,  7],
-            [10,  0,  5,  6,  6,  3],
-            [ 2,  5,  0,  4,  4,  5],
-            [ 4,  6,  4,  0,  2,  3],
-            [ 5,  6,  4,  2,  0,  2],
-            [ 7,  3,  5,  3,  2,  0]
-    ]
 
     def heuristic(state):
         cost = -max(max(distancemat))
@@ -70,14 +62,43 @@ def problem(verbose=True):
         return cost
 
 
-    return planner(problem, heuristic=heuristic, verbose=verbose)
+    return planner(problem, heuristic=heuristic, verbose=verbose, maxplans=maxplans)
 
 if __name__ == "__main__":
-    plan = problem()
+    #Distances between starting positions and trash cans.
+    distancemat = [
+            [ 0, 10,  2,  4,  5,  7],
+            [10,  0,  5,  6,  6,  3],
+            [ 2,  5,  0,  4,  4,  5],
+            [ 4,  6,  4,  0,  2,  3],
+            [ 5,  6,  4,  2,  0,  2],
+            [ 7,  3,  5,  3,  2,  0]]
 
-    if plan is None:
-        print("No plan!")
-    else:
-        for action in plan:
-            print(action)
+    plans = problem(distancemat, False, maxplans=20)
+
+    times = []
+    for plan in plans:
+        if plan is None:
+            print("No plan!")
+        else:
+            #   (agent, from, to)
+            #   ('a', 1, 3)
+            a_actions = [[str(act)[8:9], int(str(act)[11:12]), int(str(act)[14:15])] for act in plan if str(act)[8:9] == "a"]
+            #  sum costs of this path (from the matrix)
+            a_time = sum([distancemat[act[1]-1][act[2]-1] for act in a_actions])
+
+            b_actions = [[str(act)[8:9], int(str(act)[11:12]), int(str(act)[14:15])] for act in plan if str(act)[8:9] == "b"]
+            b_time = sum([distancemat[act[1]-1][act[2]-1] for act in b_actions])
+
+            times.append(max(a_time, b_time))
+
+    argmin = times.index(min(times))
+
+    print("greedy: %d" % times[0])
+    for action in plans[0]:
+        print(action)
+    print("best: %d" % times[argmin])
+    for action in plans[argmin]:
+        print(action)
+
 
