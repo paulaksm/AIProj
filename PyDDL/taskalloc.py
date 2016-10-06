@@ -20,7 +20,7 @@ def problem(distancemat, verbose=True, maxplans=20):
             effects=(
                 # This predicate is used to find the distance travelled
                 # by the agent. (heuristic function)
-                ("travelled", "T1", "T2"),
+                ("travelled", "A1", "T1", "T2"),
                 # A1 is no longer at T1
                 neg(("at", "A1", "T1")),
                 # A1 is now at T2
@@ -53,13 +53,17 @@ def problem(distancemat, verbose=True, maxplans=20):
         )
     )
 
-
+    # Heuristics based on the agent that has travelled the farthest
     def heuristic(state):
         cost = -max(max(distancemat))
+        agent2cost = {}
         for p in state.predicates:
             if p[0] == "travelled":
-                cost += distancemat[p[1]-1][p[2]-1]
-        return cost
+                if not(p[1] in agent2cost):
+                    agent2cost[p[1]] = cost
+                agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
+        # add cost to values list in case agent2cost is empty
+        return max(agent2cost.values() + [cost])
 
 
     return planner(problem, heuristic=heuristic, verbose=verbose, maxplans=maxplans)
