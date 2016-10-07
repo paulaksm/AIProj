@@ -14,7 +14,7 @@ import random
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 1
+N_TRASHCANS = 3
 N_ROBOTS = 1
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
@@ -107,11 +107,11 @@ def main():
 
     "for debug, static trashcan behind wall"
     #trashcans[0] = (500, 180)
-    trashcans[0] = (25, 350)
-    #while True:
-    #    trashcans[0] = (random.randint(0, WIDTH), random.randint(0, HEIGHT))
-    #    if not collides(trashcans[0]):
-    #        break
+    #trashcans[0] = (25, 350)
+    while True:
+        trashcans[0] = (random.randint(0, WIDTH), random.randint(0, HEIGHT))
+        if not collides(trashcans[0]):
+            break
 
     running = True
     goal = False
@@ -150,7 +150,6 @@ def main():
                     goal = True
                     goal_node = nodes[-1]
                     curr_state = 'goal_found'
-        #xd
         if curr_state == 'goal_found':
 
             curr_node = goal_node
