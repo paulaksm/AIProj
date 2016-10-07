@@ -79,7 +79,7 @@ def new_step(p1, p2):
 
 def obstaclefree(p1, p2):
     "checks if there are no walls between two points"
-    t = np.arange(0, 1, 0.5)
+    t = np.arange(0, 1, 0.05)
     for ti in t:
         x = p1[0] + (p2[0] - p1[0]) * ti;
         y = p1[1] + (p2[1] - p1[1]) * ti;
