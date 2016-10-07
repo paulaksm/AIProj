@@ -2,7 +2,7 @@
 
 from pyddl import *
 from planner import *
-
+import re
 
 def problem(distancemat, verbose=True, maxplans=20):
     domain = Domain((
@@ -87,21 +87,30 @@ if __name__ == "__main__":
         else:
             #   (agent, from, to)
             #   ('a', 1, 3)
-            a_actions = [[str(act)[8:9], int(str(act)[11:12]), int(str(act)[14:15])] for act in plan if str(act)[8:9] == "a"]
+            # turn _grounded somthing into a tuple 
+            tupledPlan = [tuple(re.sub(r'[(),]'," ", str(act)).split()) for act in plan]
+            
+            agent2time = dict()
             #  sum costs of this path (from the matrix)
-            a_time = sum([distancemat[act[1]-1][act[2]-1] for act in a_actions])
+            for act in tupledPlan:
+                # if not(act[0] == 'pick-up'): continue
+                agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
+                if not(agent in agent2time):
+                    agent2time[agent] = 0
+                agent2time[agent] += distancemat[l1][l2]
 
-            b_actions = [[str(act)[8:9], int(str(act)[11:12]), int(str(act)[14:15])] for act in plan if str(act)[8:9] == "b"]
-            b_time = sum([distancemat[act[1]-1][act[2]-1] for act in b_actions])
-
-            times.append(max(a_time, b_time))
+            time = max(agent2time.values())
+            totalDistance = sum(agent2time.values())
+            # We can give different weight to time and distance
+            # Currently, time is top priority
+            times.append((time,totalDistance,))
 
     argmin = times.index(min(times))
 
-    print("greedy: %d" % times[0])
+    print("greedy:\ttime = %d, distance = %d" % times[0])
     for action in plans[0]:
         print(action)
-    print("best: %d" % times[argmin])
+    print("best:\ttime = %d, distance = %d" % times[argmin])
     for action in plans[argmin]:
         print(action)
 
