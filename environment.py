@@ -96,6 +96,8 @@ def main():
     nodes = []
     nodes.append(init_node)
 
+    trashcan_status = []
+
     init_map()
     curr_state = 'build'
 
@@ -104,14 +106,16 @@ def main():
     for i in range(N_TRASHCANS):
         while collides((trashcans[i][0], trashcans[i][1])):
             trashcans[i] = np.random.randint(50, 600-50,2)
+        trashcan_status.append((trashcans[i], False, Node(None, None)))
+
 
     "for debug, static trashcan behind wall"
     #trashcans[0] = (500, 180)
     #trashcans[0] = (25, 350)
-    while True:
-        trashcans[0] = (random.randint(0, WIDTH), random.randint(0, HEIGHT))
-        if not collides(trashcans[0]):
-            break
+    #while True:
+    #    trashcans[0] = (random.randint(0, WIDTH), random.randint(0, HEIGHT))
+    #    if not collides(trashcans[0]):
+    #        break
 
     running = True
     goal = False
@@ -123,7 +127,6 @@ def main():
 
     robot = [300, 300]
     objRobot = pygame.Rect([robot[0] - ROBOT_WIDTH/2, robot[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
-
 
     while running:
 
@@ -145,25 +148,30 @@ def main():
                 newnode = new_step(parent.coord, rand)
                 nodes.append(Node(newnode,parent))
                 pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
-
-                if goal_coll(trashcans[0], newnode, 10):
+                trashcans_found = 0
+                for tc in range(N_TRASHCANS):
+                    if goal_coll(trashcan_status[tc][0], newnode, 10) and not trashcan_status[tc][1]:
+                        trashcan_status[tc] = (trashcans[tc], True, nodes[-1])
+                    if trashcan_status[tc][1]:
+                        trashcans_found += 1
+                if trashcans_found == N_TRASHCANS:
                     goal = True
-                    goal_node = nodes[-1]
                     curr_state = 'goal_found'
+
         if curr_state == 'goal_found':
+            for numerator in range(N_TRASHCANS):
+                curr_node = trashcan_status[numerator][2]
+                while curr_node.parent != None:
+                    if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
+                        curr_node.parent = curr_node.parent.parent
+                    else:
+                        curr_node = curr_node.parent
 
-            curr_node = goal_node
-            while curr_node.parent != None:
-                if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
-                    curr_node.parent = curr_node.parent.parent
-                else:
+                curr_node = trashcan_status[numerator][2]
+                while curr_node.parent != None:
+                    pygame.draw.line(screen, (150,50,0), curr_node.coord, curr_node.parent.coord, 5)
+                    goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
                     curr_node = curr_node.parent
-
-            curr_node = goal_node
-            while curr_node.parent != None:
-                pygame.draw.line(screen, (150,50,0), curr_node.coord, curr_node.parent.coord, 5)
-                goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
-                curr_node = curr_node.parent
 
                 #trashcans[0].coord[0] +=
 
@@ -174,7 +182,6 @@ def main():
             if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
                 trashcans = np.delete(trashcans, np.s_[idx:idx+1], axis=0)
                 print("Checked trashcan", idx)
-
 
         pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
