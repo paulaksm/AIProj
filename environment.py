@@ -123,7 +123,7 @@ def main():
     goal_node = Node(None, None)
     count = 0
 
-    goal_dist = 0
+    goal_dist = []
 
     robot = [300, 300]
     objRobot = pygame.Rect([robot[0] - ROBOT_WIDTH/2, robot[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
@@ -160,6 +160,7 @@ def main():
 
         if curr_state == 'goal_found':
             for numerator in range(N_TRASHCANS):
+                goal_dist.append(0)
                 curr_node = trashcan_status[numerator][2]
                 while curr_node.parent != None:
                     if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
@@ -170,7 +171,7 @@ def main():
                 curr_node = trashcan_status[numerator][2]
                 while curr_node.parent != None:
                     pygame.draw.line(screen, (150,50,0), curr_node.coord, curr_node.parent.coord, 5)
-                    goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
+                    goal_dist[numerator] += eucl_dist(curr_node.coord, curr_node.parent.coord)
                     curr_node = curr_node.parent
 
                 #trashcans[0].coord[0] +=
@@ -193,7 +194,8 @@ def main():
 
     if(goal):
         print("Goal reached in blabla sec, some info")
-        print(goal_dist)
+        for i in range(N_TRASHCANS):
+            print(goal_dist[i])
         pygame.time.wait(3000)
     #pygame.quit()
 
