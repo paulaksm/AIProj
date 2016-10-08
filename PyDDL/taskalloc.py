@@ -1,10 +1,11 @@
 #! /usr/bin/env python2
 
-from pyddl import *
-from planner import *
+from pyddl import Action, Domain, Problem, planner, neg
+# from planner import *
 import re
 
-def problem(distancemat, verbose=True, maxplans=20):
+
+def problem(distancemat, verbose=True):
     domain = Domain((
         Action(
             "pick-up",
@@ -34,9 +35,10 @@ def problem(distancemat, verbose=True, maxplans=20):
         domain,
         {
             # List of all agents
-            "agent" : ("a", "b"),
-            #list of trash cans. Note: Starting positions are treated as trash cans.
-            "trash_can" : (1, 2, 3, 4, 5, 6),
+            "agent": ("a", "b"),
+            # list of trash cans. Note: Starting positions are
+            # treated as trash cans.
+            "trash_can": (1, 2, 3, 4, 5, 6),
         },
 
         init=(
@@ -65,53 +67,45 @@ def problem(distancemat, verbose=True, maxplans=20):
         # add cost to values list in case agent2cost is empty
         return max(agent2cost.values() + [cost])
 
-
-    return planner(problem, heuristic=heuristic, verbose=verbose, maxplans=maxplans)
+    return planner(problem,
+                   heuristic=heuristic,
+                   verbose=verbose)
 
 if __name__ == "__main__":
-    #Distances between starting positions and trash cans.
+    # Distances between starting positions and trash cans.
     distancemat = [
-            [ 0, 10,  2,  4,  5,  7],
-            [10,  0,  5,  6,  6,  3],
-            [ 2,  5,  0,  4,  4,  5],
-            [ 4,  6,  4,  0,  2,  3],
-            [ 5,  6,  4,  2,  0,  2],
-            [ 7,  3,  5,  3,  2,  0]]
+            [0, 10,  2,  4,  5,  7],
+            [10, 0,  5,  6,  6,  3],
+            [2,  5,  0,  4,  4,  5],
+            [4,  6,  4,  0,  2,  3],
+            [5,  6,  4,  2,  0,  2],
+            [7,  3,  5,  3,  2,  0]]
 
-    plans = problem(distancemat, False, maxplans=20)
+    plan = problem(distancemat, False)
 
     times = []
-    for plan in plans:
-        if plan is None:
-            print("No plan!")
-        else:
-            #   (agent, from, to)
-            #   ('a', 1, 3)
-            # turn _grounded somthing into a tuple 
-            tupledPlan = [tuple(re.sub(r'[(),]'," ", str(act)).split()) for act in plan]
-            
-            agent2time = dict()
-            #  sum costs of this path (from the matrix)
-            for act in tupledPlan:
-                # if not(act[0] == 'pick-up'): continue
-                agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
-                if not(agent in agent2time):
-                    agent2time[agent] = 0
-                agent2time[agent] += distancemat[l1][l2]
+    if plan is None:
+        print("No plan!")
+    else:
+        #   (agent, from, to)
+        #   ('a', 1, 3)
+        # turn _grounded somthing into a tuple
+        tupledPlan = [tuple(re.sub(r'[(),]', " ", str(act)).split())
+                      for act in plan]
 
-            time = max(agent2time.values())
-            totalDistance = sum(agent2time.values())
-            # We can give different weight to time and distance
-            # Currently, time is top priority
-            times.append((time,totalDistance,))
+        agent2time = dict()
+        #  sum costs of this path (from the matrix)
+        for act in tupledPlan:
+            # if not(act[0] == 'pick-up'): continue
+            agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
+            if not(agent in agent2time):
+                agent2time[agent] = 0
+            agent2time[agent] += distancemat[l1][l2]
 
-    argmin = times.index(min(times))
-
-    print("greedy:\ttime = %d, distance = %d" % times[0])
-    for action in plans[0]:
+        time = max(agent2time.values())
+        totalDistance = sum(agent2time.values())
+        # We can give different weight to time and distance
+        # Currently, time is top priority
+    print("time: = %d,\tdistance: = %d" % (time, totalDistance))
+    for action in plan:
         print(action)
-    print("best:\ttime = %d, distance = %d" % times[argmin])
-    for action in plans[argmin]:
-        print(action)
-
-

@@ -2,7 +2,7 @@ from time import time
 import heapq
 
 def planner(problem, heuristic=None, state0=None, goal=None,
-            monotone=False, verbose=True, maxplans=20):
+            monotone=False, verbose=True):
     """
     Implements A* search to find a plan for the given problem.
     Arguments:
@@ -26,7 +26,6 @@ def planner(problem, heuristic=None, state0=None, goal=None,
     fringe = [(heuristic(state0), -state0.cost, state0)]
     heapq.heapify(fringe)
     start = time()
-    plans = []
     while True:
         if len(fringe) == 0:
             if verbose: print 'States Explored: %d' % states_explored
@@ -44,10 +43,8 @@ def planner(problem, heuristic=None, state0=None, goal=None,
                 print 'States Explored: %d' % states_explored
                 print 'Time per state: %.3f ms' % (1000*dur / states_explored)
                 print 'Plan length: %d' % node.cost
-            plans.append(plan)
+            return plan
 
-        if len(plans) > maxplans:
-            return plans
         # Expand node if we haven't seen it before
         if node not in closed:
             closed.add(node)

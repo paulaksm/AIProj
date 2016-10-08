@@ -1,5 +1,5 @@
 #! /usr/bin/env python2
-from pyddl import *
+from pyddl import Domain, Action, Problem, neg, planner
 
 # Very simple pathfinding algo.
 # The agent starts at 1, and needs to reach 9.
@@ -10,9 +10,9 @@ from pyddl import *
 
 
 def problem(verbose):
-    #problem domain
+    # problem domain
     domain = Domain((
-        #Function to move between tiles.
+        # Function to move between tiles.
         Action(
             "move",
             # P1 and P2 are the parameters the solver will tweak.
@@ -40,8 +40,8 @@ def problem(verbose):
         domain,
         {
             # type          values
-            "agent" : ("a","b"),
-            "position" : (1,2,3,4,5,6,7,8,9),
+            "agent": ("a", "b"),
+            "position": (1, 2, 3, 4, 5, 6, 7, 8, 9),
         },
         init=(
             # initial KB for our problem
@@ -85,17 +85,16 @@ def problem(verbose):
         )
     )
 
-
     postable = {
-                1: (1,1),
-                2: (1,2),
-                3: (1,3),
-                4: (2,1),
-                5: (2,2),
-                6: (2,3),
-                7: (3,1),
-                8: (3,2),
-                9: (3,3)
+                1: (1, 1),
+                2: (1, 2),
+                3: (1, 3),
+                4: (2, 1),
+                5: (2, 2),
+                6: (2, 3),
+                7: (3, 1),
+                8: (3, 2),
+                9: (3, 3)
     }
 
     def to_coordinates(state):
@@ -116,7 +115,9 @@ def problem(verbose):
             dist += (abs(c1 - c2) + abs(r1 - r2))
         return dist
 
-    plan = planner(problem, heuristic=manhattan_distance_heuristic, verbose=verbose)
+    plan = planner(problem,
+                   heuristic=manhattan_distance_heuristic,
+                   verbose=verbose)
     if plan is None:
         print('No Plan!')
     else:
