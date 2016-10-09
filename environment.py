@@ -14,14 +14,14 @@ import random
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 3
-N_ROBOTS = 1
+N_TRASHCANS = 5
+N_ROBOTS = 3
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
 MAX_NODES = 10000
-STEP_LENGTH = 30.0
+STEP_LENGTH = 10.0
 
-screen = pygame.display.set_mode(SIZE);
+screen = pygame.display.set_mode(SIZE)
 clock = pygame.time.Clock()
 
 walls = []
@@ -46,7 +46,7 @@ def init_map():
     walls.append(pygame.Rect((200,0),(100,175)))
     
     for i in walls:
-        pygame.draw.rect(screen, (100,100,100), i)
+        pygame.draw.rect(screen, (100, 100, 100), i)
 
 def collides(p):
     "checks if a rectangle collides with the walls"
@@ -91,11 +91,6 @@ def obstaclefree(p1, p2):
 def main():
     pygame.init()
 
-    "Robot node (root of tree)"
-    init_node = Node([300, 300], None)
-    nodes = []
-    nodes.append(init_node)
-
     trashcan_status = []
 
     init_map()
@@ -124,13 +119,22 @@ def main():
     count = 0
 
     goal_dist = []
+    nodes = []
 
-    robot = [300, 300]
-    objRobot = pygame.Rect([robot[0] - ROBOT_WIDTH/2, robot[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
+    "Initialize robots"
+    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    for i in range(N_ROBOTS):
+        while collides((robots[i][0], robots[i][1])):
+            robots[i] = np.random.randint(50, 600-50, 2)
+
+    curr_robot = 0
 
     while running:
-
+        
         if curr_state == 'build':
+            #print(robots[curr_robot])
+            init_node = Node(robots[curr_robot], None)
+            nodes.append(init_node)
             count += 1
             if count < MAX_NODES:
                 foundNext = False
@@ -170,21 +174,34 @@ def main():
 
                 curr_node = trashcan_status[numerator][2]
                 while curr_node.parent != None:
-                    pygame.draw.line(screen, (150,50,0), curr_node.coord, curr_node.parent.coord, 5)
+                    pygame.draw.line(screen, (150, 50, 0), curr_node.coord, curr_node.parent.coord, 5)
                     goal_dist[numerator] += eucl_dist(curr_node.coord, curr_node.parent.coord)
                     curr_node = curr_node.parent
-
+            trashcans_found = 0;
+            for i in range(N_TRASHCANS):
+                trashcan_status[i] = (trashcans[i], False, nodes[-1])
+            print(curr_robot)
+            if curr_robot != N_ROBOTS-1:
+                curr_state = 'build'
+            else:
+                goal = True
+                running = False
+            nodes = []
+            curr_robot += 1
                 #trashcans[0].coord[0] +=
 
-            running = False
+            #running = False
 
+        for idx, i in enumerate(robots):
+            pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
+        
         for idx, i in enumerate(trashcans):
             pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
-            if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
-                trashcans = np.delete(trashcans, np.s_[idx:idx+1], axis=0)
-                print("Checked trashcan", idx)
+        #    if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
+        #        trashcans = np.delete(trashcans, np.s_[idx:idx+1], axis=0)
+        #        print("Checked trashcan", idx)
 
-        pygame.draw.rect(screen, (255, 0, 255), objRobot)
+        #pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 running = False 
