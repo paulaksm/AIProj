@@ -145,6 +145,7 @@ def main():
     goal_dist = []
     nodes = []
 
+
     while running:
         
         if curr_state == 'build':
@@ -174,64 +175,36 @@ def main():
                         if (obj == i):
                             continue
                         if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
-                            dist_matrix[i, obj] = calc_dist(node_lists[i][-1]) 
+                            dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
                             print(dist_matrix)
                             print(obj)
-
-                    #    curr_state = 'goal_found'
-
-        if curr_state == 'goal_found':
-            for numerator in range(N_TRASHCANS):
-                goal_dist.append(0)
-                curr_node = trashcan_status[numerator][2]
-                while curr_node.parent != None:
-                    if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
-                        curr_node.parent = curr_node.parent.parent
-                    else:
-                        curr_node = curr_node.parent
-
-                curr_node = trashcan_status[numerator][2]
-                while curr_node.parent != None:
-                    pygame.draw.line(screen, (150, 50, 0), curr_node.coord, curr_node.parent.coord, 5)
-                    goal_dist[numerator] += eucl_dist(curr_node.coord, curr_node.parent.coord)
-                    curr_node = curr_node.parent
-            trashcans_found = 0;
-            for i in range(N_TRASHCANS):
-                trashcan_status[i] = (trashcans[i], False, nodes[-1])
-            print(curr_robot)
-            if curr_robot != N_ROBOTS-1:
-                curr_state = 'build'
-            else:
-                goal = True
-                running = False
-            nodes = []
-            curr_robot += 1
-                #trashcans[0].coord[0] +=
-
-            #running = False
 
         for idx, i in enumerate(robots):
             pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
         
         for idx, i in enumerate(trashcans):
             pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
-        #    if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
-        #        trashcans = np.delete(trashcans, np.s_[idx:idx+1], axis=0)
-        #        print("Checked trashcan", idx)
 
-        #pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 running = False 
-
-
+        
+        NODES_DONE = 0
+        for i in range(N_OBJECTS):
+            for j in range(N_OBJECTS):
+                if (i == j):
+                    continue
+                if dist_matrix[i, j] != 0:
+                    NODES_DONE += 1
+        if NODES_DONE == N_OBJECTS * N_OBJECTS - N_OBJECTS:
+            goal = True
+            running = False
         pygame.display.update()
 
     if(goal):
         print("Goal reached in blabla sec, some info")
-        for i in range(N_TRASHCANS):
-            print(goal_dist[i])
+        print(dist_matrix)
         pygame.time.wait(3000)
     #pygame.quit()
 
