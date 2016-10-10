@@ -90,6 +90,13 @@ def obstaclefree(p1, p2):
 
     return True
 
+def insideMap(p):
+    x = p[0]
+    y = p[1]
+    if x < 0 or x > WIDTH or y < 0 or y > HEIGHT:
+        return False
+    return True
+
 def calc_dist(curr_node):
 
     temp = curr_node
@@ -123,9 +130,8 @@ def connect(objidx, goalobj, p1, p2):
     print(direction)
     print(p1)
     count = 0
-    while obstaclefree(p1, newpoint) and count < 10: # Kolla så de inte hamnar utanför screen!!
+    while obstaclefree(p1, newpoint) and insideMap(newpoint): # Kolla så de inte hamnar utanför screen!!
         if point_coll(newpoint, p2, 10):
-            print("WTF?!?")
             node_lists[objidx].append(Node(p2, node_lists[objidx][-1]))
             while goalobj.parent != None:
                 node_lists[objidx].append(Node(goalobj,node_lists[objidx][-1]))
@@ -136,7 +142,7 @@ def connect(objidx, goalobj, p1, p2):
             node_lists[objidx].append(Node(newpoint, p1))  
             p1 = newpoint
             newpoint = p1 + direction
-            count += 1
+            count += 0
 
 
 def main():
