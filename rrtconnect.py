@@ -24,6 +24,7 @@ screen = pygame.display.set_mode(SIZE)
 clock = pygame.time.Clock()
 
 walls = []
+node_lists = [[] for i in range(N_OBJECTS)]
 
 class Node(object):
     def __init__(self, coord, parent):
@@ -34,6 +35,8 @@ def eucl_dist(p1,p2):
     "calculates the culidian distance between two points"
     return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
+def eucl_distSq(p1, p2):
+    return (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2
 
 def init_map():
     "inits the map"
@@ -63,7 +66,7 @@ def new_coord():
 
 def point_coll(p1, p2, radius):
     "checks if a point is within a certian radius of another point"
-    if eucl_dist(p1,p2) < radius:
+    if eucl_distSq(p1,p2) < radius ** 2:
         return True
     return False
 
@@ -110,6 +113,32 @@ def calc_dist(curr_node):
     
     return goal_dist
 
+
+""" Tries to connect two nodes together trough a straight line
+"""
+def connect(objidx, goalobj, p1, p2):
+    direction = np.array(p2)-np.array(p1)
+    direction = direction/np.sum(direction)*STEP_LENGTH
+    newpoint = p1 + direction 
+    print(direction)
+    print(p1)
+    count = 0
+    while obstaclefree(p1, newpoint) and count < 10: # Kolla så de inte hamnar utanför screen!!
+        if point_coll(newpoint, p2, 10):
+            print("WTF?!?")
+            node_lists[objidx].append(Node(p2, node_lists[objidx][-1]))
+            while goalobj.parent != None:
+                node_lists[objidx].append(Node(goalobj,node_lists[objidx][-1]))
+                goalobj = goalobj.parent
+            break
+        else:
+            pygame.draw.line(screen, (255,255,255), p1, newpoint)
+            node_lists[objidx].append(Node(newpoint, p1))  
+            p1 = newpoint
+            newpoint = p1 + direction
+            count += 1
+
+
 def main():
     pygame.init()
 
@@ -117,7 +146,6 @@ def main():
     trashcan_status = []
     init_map()
 
-    node_lists = [[] for i in range(N_OBJECTS)]
 
     "Initialize robots randomly"
     robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
@@ -151,7 +179,7 @@ def main():
         if curr_state == 'build':
 
             # Build tree from each startnode and goal
-            for i in range(N_OBJECTS):
+            for i in range(N_OBJECTS-4):
 
                 count += 1
                 if count < MAX_NODES:
@@ -169,8 +197,12 @@ def main():
 
                     newnode = new_step(parent.coord, rand)
                     node_lists[i].append(Node(newnode,parent))
-                    #pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
-                     
+
+                    pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
+                    connect(i, node_lists[N_OBJECTS-1][-1], newnode, node_lists[4][-1].coord)
+
+
+                    """ 
                     for obj in range(N_OBJECTS):
                         if (obj == i):
                             continue
@@ -179,7 +211,8 @@ def main():
                             dist_matrix[obj, i] = dist_matrix[i, obj]
                             print(dist_matrix)
                             print(obj)
-
+                    """
+        clock.tick(3)
         for idx, i in enumerate(robots):
             pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
         
