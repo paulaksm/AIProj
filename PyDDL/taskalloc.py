@@ -5,7 +5,7 @@ from pyddl import Action, Domain, Problem, planner, neg
 import re
 
 
-def problem(distancemat, verbose=True):
+def problem(distancemat, agentcount, verbose=True):
     domain = Domain((
         Action(
             "pick-up",
@@ -35,24 +35,13 @@ def problem(distancemat, verbose=True):
         domain,
         {
             # List of all agents
-            "agent": ("a", "b"),
+            "agent":  [i for i in range(agentcount)],
             # list of trash cans. Note: Starting positions are
             # treated as trash cans.
-            "trash_can": (1, 2, 3, 4, 5, 6),
+            "trash_can":  [i for i in range(len(distancemat))],
         },
-
-        init=(
-            ("at", "a", 1),
-            ("at", "b", 2),
-        ),
-
-        goal=(
-                # 1 and 2 are starting positions, and as such ignored here.
-                ("checked", 3),
-                ("checked", 4),
-                ("checked", 5),
-                ("checked", 6),
-        )
+        init=[("at", i, i) for i in range(agentcount)],
+        goal=[("checked", agentcount + i) for i in range(len(distancemat)-agentcount)]
     )
 
     # Heuristics based on the agent that has travelled the farthest
@@ -63,7 +52,8 @@ def problem(distancemat, verbose=True):
             if p[0] == "travelled":
                 if not(p[1] in agent2cost):
                     agent2cost[p[1]] = cost
-                agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
+                agent2cost[p[1]] += distancemat[p[2]][p[3]]
+                #agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
         # add cost to values list in case agent2cost is empty
         return max(agent2cost.values() + [cost])
 
@@ -71,41 +61,70 @@ def problem(distancemat, verbose=True):
                    heuristic=heuristic,
                    verbose=verbose)
 
-if __name__ == "__main__":
-    # Distances between starting positions and trash cans.
-    distancemat = [
-            [0, 10,  2,  4,  5,  7],
-            [10, 0,  5,  6,  6,  3],
-            [2,  5,  0,  4,  4,  5],
-            [4,  6,  4,  0,  2,  3],
-            [5,  6,  4,  2,  0,  2],
-            [7,  3,  5,  3,  2,  0]]
+def get_plan(distancemat, agentcount , verbose=False, pop=False):
+    """
+        Returns a dictionary of with allocated trash cans for every agent.
+        <pop> sets ordering of targets. True -> reversed order, for pop()-support.
+    """
 
-    plan = problem(distancemat, False)
+    assert(agentcount > 0)
 
-    times = []
+    plan = problem(distancemat, agentcount, verbose)
+
     if plan is None:
-        print("No plan!")
-    else:
-        #   (agent, from, to)
-        #   ('a', 1, 3)
-        # turn _grounded somthing into a tuple
-        tupledPlan = [tuple(re.sub(r'[(),]', " ", str(act)).split())
-                      for act in plan]
+        return dict()
+    #   (agent, from, to)
+    #   ('a', 1, 3)
+    # turn _grounded somthing into a tuple
+    tupledPlan = [tuple(re.sub(r'[(),]', " ", str(act)).split())
+                  for act in plan]
 
-        agent2time = dict()
-        #  sum costs of this path (from the matrix)
-        for act in tupledPlan:
-            # if not(act[0] == 'pick-up'): continue
-            agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
-            if not(agent in agent2time):
-                agent2time[agent] = 0
-            agent2time[agent] += distancemat[l1][l2]
+    # initialize
+    allocation_dict = dict()
+    for agent in range(agentcount):
+        allocation_dict[agent] = []
+    # populate
+    for action in tupledPlan:
+        if pop:
+            allocation_dict[int(action[1])].insert(0, int(action[3]))
+        else:
+            allocation_dict[int(action[1])].append(int(action[3]))
 
-        time = max(agent2time.values())
-        totalDistance = sum(agent2time.values())
-        # We can give different weight to time and distance
-        # Currently, time is top priority
-    print("time: = %d,\tdistance: = %d" % (time, totalDistance))
-    for action in plan:
-        print(action)
+
+    agent2time = dict()
+    #  sum costs of this path (from the matrix)
+    for act in tupledPlan:
+        # if not(act[0] == 'pick-up'): continue
+        agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
+        if not(agent in agent2time):
+            agent2time[agent] = 0
+        agent2time[agent] += distancemat[l1][l2]
+
+    time = max(agent2time.values())
+    totalDistance = sum(agent2time.values())
+    # We can give different weight to time and distance
+    # Currently, time is top priority
+    if verbose:
+        print("time: = %d,\tdistance: = %d" % (time, totalDistance))
+        for action in plan:
+            print(action)
+
+    allocation_dict["time"] = time
+    allocation_dict["distance"] = totalDistance
+
+    return allocation_dict
+
+
+if __name__ == "__main__":
+# Distances between starting positions and trash cans.
+    distancemat = [
+        [0, 10,  2,  4,  5,  7],
+        [10, 0,  5,  6,  6,  3],
+        [2,  5,  0,  4,  4,  5],
+        [4,  6,  4,  0,  2,  3],
+        [5,  6,  4,  2,  0,  2],
+        [7,  3,  5,  3,  2,  0]]
+
+    plan = get_plan(distancemat, 2, True)
+    print("-------")
+    print(plan)
