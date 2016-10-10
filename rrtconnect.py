@@ -145,6 +145,7 @@ def main():
     goal_dist = []
     nodes = []
 
+
     while running:
         
         if curr_state == 'build':
@@ -174,10 +175,11 @@ def main():
                         if (obj == i):
                             continue
                         if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
-                            dist_matrix[i, obj] = calc_dist(node_lists[i][-1]) 
+                            dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
                             print(dist_matrix)
                             print(obj)
+
 
                     #    curr_state = 'goal_found'
 
@@ -226,12 +228,22 @@ def main():
                 running = False 
 
 
+        
+        NODES_DONE = 0
+        for i in range(N_OBJECTS):
+            for j in range(N_OBJECTS):
+                if (i == j):
+                    continue
+                if dist_matrix[i, j] != 0:
+                    NODES_DONE += 1
+        if NODES_DONE == N_OBJECTS * N_OBJECTS - N_OBJECTS:
+            goal = True
+            running = False
         pygame.display.update()
 
     if(goal):
         print("Goal reached in blabla sec, some info")
-        for i in range(N_TRASHCANS):
-            print(goal_dist[i])
+        print(dist_matrix)
         pygame.time.wait(3000)
     #pygame.quit()
 
