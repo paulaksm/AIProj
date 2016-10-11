@@ -1,8 +1,6 @@
 #! /usr/bin/env python2
 '''
-Simple concept environment implemented in pygame.
-Testing if it would be suitable as some kind of
-visualization for the project
+Working distance matrix version
 '''
 
 "constants used for drawing"
@@ -16,9 +14,10 @@ from math import cos, sin, atan2, sqrt
 SIZE = WIDTH, HEIGHT = 600, 600
 N_TRASHCANS = 5
 N_ROBOTS = 3
+N_OBJECTS = N_TRASHCANS+N_ROBOTS
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
-MAX_NODES = 10000
+MAX_NODES = 100000
 STEP_LENGTH = 10.0
 
 screen = pygame.display.set_mode(SIZE)
@@ -62,7 +61,7 @@ def new_coord():
         if not(collides(temp)):
             return temp
 
-def goal_coll(p1, p2, radius):
+def point_coll(p1, p2, radius):
     "checks if a point is within a certian radius of another point"
     if eucl_dist(p1,p2) < radius:
         return True
@@ -88,13 +87,44 @@ def obstaclefree(p1, p2):
 
     return True
 
+def calc_dist(curr_node):
+
+    temp = curr_node
+    goal_dist = 0
+
+    # Try to shorten and smoothen out path
+    while curr_node.parent != None:
+        if (curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord)):
+            curr_node.parent = curr_node.parent.parent
+        else:
+            curr_node = curr_node.parent
+
+    curr_node = temp
+
+    # Calculate distance (and draw path)
+    while curr_node.parent != None:
+        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 5)
+        goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
+        curr_node = curr_node.parent
+    
+    
+    return goal_dist
+
 def main():
     pygame.init()
 
+    dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
-
     init_map()
-    curr_state = 'build'
+
+    node_lists = [[] for i in range(N_OBJECTS)]
+
+    "Initialize robots randomly"
+    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    for i in range(N_ROBOTS):
+        while collides((robots[i][0], robots[i][1])):
+            robots[i] = np.random.randint(50, 600-50, 2)
+        node_lists[i].append(Node(robots[i], None))
 
     "Initialize trashcans randomly"
     trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
@@ -102,65 +132,56 @@ def main():
         while collides((trashcans[i][0], trashcans[i][1])):
             trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None, None)))
+        node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
 
-
-    "for debug, static trashcan behind wall"
-    #trashcans[0] = (500, 180)
-    #trashcans[0] = (25, 350)
-    #while True:
-    #    trashcans[0] = (random.randint(0, WIDTH), random.randint(0, HEIGHT))
-    #    if not collides(trashcans[0]):
-    #        break
-
+    curr_state = 'build'
     running = True
     goal = False
 
     goal_node = Node(None, None)
     count = 0
 
+
     goal_dist = []
     nodes = []
 
-    "Initialize robots"
-    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
-    for i in range(N_ROBOTS):
-        while collides((robots[i][0], robots[i][1])):
-            robots[i] = np.random.randint(50, 600-50, 2)
-
-    curr_robot = 0
 
     while running:
         
         if curr_state == 'build':
-            #print(robots[curr_robot])
-            init_node = Node(robots[curr_robot], None)
-            nodes.append(init_node)
-            count += 1
-            if count < MAX_NODES:
-                foundNext = False
-                while foundNext == False:
-                    rand = new_coord()
-                    parent = nodes[0]
 
-                    for p in nodes:
-                        if eucl_dist(p.coord, rand) <= eucl_dist(parent.coord, rand):
-                            newPoint = new_step(p.coord, rand)
-                            if collides(newPoint) == False and obstaclefree(p.coord, newPoint):
-                                parent = p
-                                foundNext = True
+            # Build tree from each startnode and goal
+            for i in range(N_OBJECTS):
 
-                newnode = new_step(parent.coord, rand)
-                nodes.append(Node(newnode,parent))
-                pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
-                trashcans_found = 0
-                for tc in range(N_TRASHCANS):
-                    if goal_coll(trashcan_status[tc][0], newnode, 10) and not trashcan_status[tc][1]:
-                        trashcan_status[tc] = (trashcans[tc], True, nodes[-1])
-                    if trashcan_status[tc][1]:
-                        trashcans_found += 1
-                if trashcans_found == N_TRASHCANS:
-                    goal = True
-                    curr_state = 'goal_found'
+                count += 1
+                if count < MAX_NODES:
+                    foundNext = False
+                    while foundNext == False:
+                        rand = new_coord()
+                        parent = node_lists[i][0] 
+
+                        for p in node_lists[i]:
+                            if eucl_dist(p.coord, rand) <= eucl_dist(parent.coord, rand):
+                                newPoint = new_step(p.coord, rand)
+                                if collides(newPoint) == False and obstaclefree(p.coord, newPoint):
+                                    parent = p
+                                    foundNext = True
+
+                    newnode = new_step(parent.coord, rand)
+                    node_lists[i].append(Node(newnode,parent))
+                    #pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
+                     
+                    for obj in range(N_OBJECTS):
+                        if (obj == i):
+                            continue
+                        if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
+                            dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
+                            dist_matrix[obj, i] = dist_matrix[i, obj]
+                            print(dist_matrix)
+                            print(obj)
+
+
+                    #    curr_state = 'goal_found'
 
         if curr_state == 'goal_found':
             for numerator in range(N_TRASHCANS):
@@ -207,12 +228,22 @@ def main():
                 running = False 
 
 
+        
+        NODES_DONE = 0
+        for i in range(N_OBJECTS):
+            for j in range(N_OBJECTS):
+                if (i == j):
+                    continue
+                if dist_matrix[i, j] != 0:
+                    NODES_DONE += 1
+        if NODES_DONE == N_OBJECTS * N_OBJECTS - N_OBJECTS:
+            goal = True
+            running = False
         pygame.display.update()
 
     if(goal):
         print("Goal reached in blabla sec, some info")
-        for i in range(N_TRASHCANS):
-            print(goal_dist[i])
+        print(dist_matrix)
         pygame.time.wait(3000)
     #pygame.quit()
 
