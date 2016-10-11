@@ -27,6 +27,7 @@ screen = pygame.display.set_mode(SIZE)
 clock = pygame.time.Clock()
 
 walls = []
+buff_walls = []
 
 class Node(object):
     def __init__(self, coord, parent):
@@ -44,19 +45,26 @@ def eucl_distSq(p1,p2):
 def init_map():
     "inits the map"
     global walls
+    global buff_walls
 
-    walls.append(pygame.Rect((50,80),(120,320)))
-    walls.append(pygame.Rect((0,380),(50,20)))
-    walls.append(pygame.Rect((400,200),(400,200)))
-    walls.append(pygame.Rect((200,0),(100,175)))
+    add_wall((50,80),(120,320))
+    add_wall((0,380),(50,20))
+    add_wall((400,200),(400,200))
+    add_wall((200,0),(100,175))
 
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
 
+def add_wall(corner, size):
+    walls.append(pygame.Rect(corner, size))
+    buff_corner = (corner[0] - ROBOT_WIDTH / 2, corner[1] - ROBOT_HEIGHT / 2)
+    buff_size = (size[0] + ROBOT_WIDTH, size[1] + ROBOT_HEIGHT)
+    buff_walls.append(pygame.Rect(buff_corner, buff_size))
+
 def collides(p):
     "checks if a rectangle collides with the walls"
-    for i in walls:
-        if i.colliderect(pygame.Rect([p[0] - ROBOT_WIDTH/2, p[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])):
+    for i in buff_walls:
+        if i.collidepoint(p):
             return True
     return False
 
@@ -82,15 +90,41 @@ def new_step(p1, p2):
         theta = atan2(p2[1]-p1[1],p2[0]-p1[0])
         return p1[0] + STEP_LENGTH*cos(theta), p1[1] + STEP_LENGTH*sin(theta)
 
+"""
+java.awt.geom.Line2D relativeCCW
+"""
+def relativeCCW(p1,p2,p):
+    a = p2[0] - p1[0], p2[1] - p1[1]
+    b = p[0] - p1[0], p[1] - p1[1]
+    ccw = b[0] * a[1] - b[1] * a[0]
+    if ccw == 0.0:
+        ccw = b[0] * a[0] + b[1] * a[1]
+        if ccw > 0.0:
+            b = b[0] - a[0], b[1] - a[1]
+            ccw = b[0] * a[0] + b[1] * a[1]
+            if ccw < 0.0:
+                ccw = 0.0
+    if ccw < 0:
+        return -1
+    if ccw > 0:
+        return 1
+    return 0
+"""
+java.awt.geom.Line2D linesIntersect
+"""
+def linesIntersect(p1, p2, p3, p4):
+    return ((relativeCCW(p1,p2,p3) * relativeCCW(p1,p2,p4) <= 0) and
+        (relativeCCW(p3,p4,p1) * relativeCCW(p3,p4,p2) <= 0))
+
 def obstaclefree(p1, p2):
     "checks if there are no walls between two points"
     t = np.arange(0, 1, 0.05)
-    for ti in t:
-        x = p1[0] + (p2[0] - p1[0]) * ti;
-        y = p1[1] + (p2[1] - p1[1]) * ti;
-        if collides((x,y)):
-            return False
-
+    for wall in buff_walls:
+        corners = [wall.topleft, wall.bottomleft, wall.bottomright,
+            wall.topright, wall.topleft]
+        for it in range(4):
+            if linesIntersect(p1, p2, corners[it], corners[it+1]):
+                return False
     return True
 
 def calc_dist(curr_node):
