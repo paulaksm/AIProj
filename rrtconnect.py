@@ -1,4 +1,5 @@
 #! /usr/bin/env python2
+# coding=utf8
 '''
 Working on RRT-Connect
 '''
@@ -46,7 +47,7 @@ def init_map():
     walls.append(pygame.Rect((0,380),(50,20)))
     walls.append(pygame.Rect((400,200),(400,200)))
     walls.append(pygame.Rect((200,0),(100,175)))
-    
+
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
 
@@ -116,8 +117,8 @@ def calc_dist(curr_node):
         pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 5)
         goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
         curr_node = curr_node.parent
-    
-    
+
+
     return goal_dist
 
 
@@ -126,7 +127,7 @@ def calc_dist(curr_node):
 def connect(objidx, goalobj, p1, p2):
     direction = np.array(p2)-np.array(p1)
     direction = direction/np.sum(direction)*STEP_LENGTH
-    newpoint = p1 + direction 
+    newpoint = p1 + direction
     print(direction)
     print(p1)
     count = 0
@@ -139,7 +140,7 @@ def connect(objidx, goalobj, p1, p2):
             break
         else:
             pygame.draw.line(screen, (255,255,255), p1, newpoint)
-            node_lists[objidx].append(Node(newpoint, p1))  
+            node_lists[objidx].append(Node(newpoint, p1))
             p1 = newpoint
             newpoint = p1 + direction
             count += 0
@@ -181,7 +182,7 @@ def main():
 
 
     while running:
-        
+
         if curr_state == 'build':
 
             # Build tree from each startnode and goal
@@ -192,7 +193,7 @@ def main():
                     foundNext = False
                     while foundNext == False:
                         rand = new_coord()
-                        parent = node_lists[i][0] 
+                        parent = node_lists[i][0]
 
                         for p in node_lists[i]:
                             if eucl_dist(p.coord, rand) <= eucl_dist(parent.coord, rand):
@@ -208,7 +209,7 @@ def main():
                     connect(i, node_lists[N_OBJECTS-1][-1], newnode, node_lists[4][-1].coord)
 
 
-                    """ 
+                    """
                     for obj in range(N_OBJECTS):
                         if (obj == i):
                             continue
@@ -221,14 +222,14 @@ def main():
         clock.tick(3)
         for idx, i in enumerate(robots):
             pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
-        
+
         for idx, i in enumerate(trashcans):
             pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                running = False 
-        
+                running = False
+
         NODES_DONE = 0
         for i in range(N_OBJECTS):
             for j in range(N_OBJECTS):

@@ -1,4 +1,5 @@
 #! /usr/bin/env python2
+# coding=utf8
 '''
 Simple concept environment implemented in pygame.
 Testing if it would be suitable as some kind of
@@ -44,7 +45,7 @@ def init_map():
     walls.append(pygame.Rect((0,380),(50,20)))
     walls.append(pygame.Rect((400,200),(400,200)))
     walls.append(pygame.Rect((200,0),(100,175)))
-    
+
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
 
@@ -130,7 +131,7 @@ def main():
     curr_robot = 0
 
     while running:
-        
+
         if curr_state == 'build':
             #print(robots[curr_robot])
             init_node = Node(robots[curr_robot], None)
@@ -194,7 +195,7 @@ def main():
 
         for idx, i in enumerate(robots):
             pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
-        
+
         for idx, i in enumerate(trashcans):
             pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
         #    if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
@@ -204,7 +205,7 @@ def main():
         #pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                running = False 
+                running = False
 
 
         pygame.display.update()

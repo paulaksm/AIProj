@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# coding=utf8
 import pygame
 import numpy as np
 
@@ -23,6 +24,7 @@ class Circle:
 
 def dist(p1,p2):
     return np.linalg.norm(p1 - p2)
+
 def test():
     A = Circle((0,0),5)
     B = Circle((11,0),6)
@@ -30,3 +32,32 @@ def test():
     B.move((12,0))
     print A, B, A.intersectCircle(B)
 #test()
+
+class SpaceTime:
+    def __init__(self, time):
+        self.time = time
+        self.space = dict()
+    """
+    Check if circle collides with other circles in this space.
+    If circle collides, it return True and the circle it collided with,
+    else it return False and None
+    in: circle
+    out: if collided, collided with
+    """
+    def collides(self, circle):
+        for other in self.space:
+            if circle.intersectCircle(space[other]):
+                return True, other
+        return False, None
+    """
+    Add a circle to this timespace with a key.
+    in: key, circle
+    """
+    def add(self, key, circle):
+        self.space[key] = circle
+    """
+    Remove a circle using a key.
+    in: key
+    """
+    def remove(self, key):
+        del self.space[key]

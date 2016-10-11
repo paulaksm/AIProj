@@ -1,5 +1,5 @@
 #! /usr/bin/env python2
-
+# coding=utf8
 from pyddl import Action, Domain, Problem, planner, neg
 # from planner import *
 import re
