@@ -10,6 +10,8 @@ from pygame.locals import *
 import pygame
 import numpy as np
 import random
+import taskalloc
+import time
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
@@ -32,9 +34,12 @@ class Node(object):
         self.parent = parent
 
 def eucl_dist(p1,p2):
-    "calculates the culidian distance between two points"
+    "calculates the euclidian distance between two points"
     return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
+def eucl_distSq(p1,p2):
+    "calculates the squared euclidian distance between two points"
+    return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
 
 def init_map():
     "inits the map"
@@ -64,14 +69,14 @@ def new_coord():
 
 def point_coll(p1, p2, radius):
     "checks if a point is within a certian radius of another point"
-    if eucl_dist(p1,p2) < radius:
+    if eucl_distSq(p1,p2) < radius ** 2:
         return True
     return False
 
 
 def new_step(p1, p2):
     "calculates the next step"
-    if eucl_dist(p1,p2) < STEP_LENGTH:
+    if eucl_distSq(p1,p2) < STEP_LENGTH ** 2:
         return p2
     else:
         theta = atan2(p2[1]-p1[1],p2[0]-p1[0])
@@ -104,16 +109,17 @@ def calc_dist(curr_node):
 
     # Calculate distance (and draw path)
     while curr_node.parent != None:
-        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 5)
+        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 1)
         goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
         curr_node = curr_node.parent
-    
-    
+
+
     return goal_dist
 
 def main():
     pygame.init()
 
+    start_time = time.time()
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
     init_map()
@@ -159,10 +165,10 @@ def main():
                     foundNext = False
                     while foundNext == False:
                         rand = new_coord()
-                        parent = node_lists[i][0] 
+                        parent = node_lists[i][0]
 
                         for p in node_lists[i]:
-                            if eucl_dist(p.coord, rand) <= eucl_dist(parent.coord, rand):
+                            if eucl_distSq(p.coord, rand) <= eucl_distSq(parent.coord, rand):
                                 newPoint = new_step(p.coord, rand)
                                 if collides(newPoint) == False and obstaclefree(p.coord, newPoint):
                                     parent = p
@@ -171,7 +177,7 @@ def main():
                     newnode = new_step(parent.coord, rand)
                     node_lists[i].append(Node(newnode,parent))
                     #pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
-                     
+
                     for obj in range(N_OBJECTS):
                         if (obj == i):
                             continue
@@ -215,7 +221,7 @@ def main():
             #running = False
 
         for idx, i in enumerate(robots):
-            pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
+            pygame.draw.ellipse(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
         for idx, i in enumerate(trashcans):
             pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
@@ -229,7 +235,7 @@ def main():
                 running = False
 
 
-        
+
         NODES_DONE = 0
         for i in range(N_OBJECTS):
             for j in range(N_OBJECTS):
@@ -243,8 +249,9 @@ def main():
         pygame.display.update()
 
     if(goal):
-        print("Goal reached in blabla sec, some info")
+        print("Goal reached in %.2f seconds, some info" % (time.time() - start_time))
         print(dist_matrix)
+        taskalloc.get_plan(dist_matrix, N_ROBOTS, True)
         pygame.time.wait(3000)
     #pygame.quit()
 

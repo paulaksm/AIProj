@@ -3,9 +3,11 @@
 from pyddl import Action, Domain, Problem, planner, neg
 # from planner import *
 import re
+import numpy as np
 
 
 def problem(distancemat, agentcount, verbose=True):
+    distmat = np.matrix(distancemat)
     domain = Domain((
         Action(
             "pick-up",
@@ -46,7 +48,8 @@ def problem(distancemat, agentcount, verbose=True):
 
     # Heuristics based on the agent that has travelled the farthest
     def heuristic(state):
-        cost = -max(max(distancemat))
+        #print distancemat
+        cost = -distmat.max()
         agent2cost = {}
         for p in state.predicates:
             if p[0] == "travelled":
@@ -105,7 +108,7 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
     # We can give different weight to time and distance
     # Currently, time is top priority
     if verbose:
-        print("time: = %d,\tdistance: = %d" % (time, totalDistance))
+        print("time: %d,\tdistance: %d" % (time, totalDistance))
         for action in plan:
             print(action)
 
@@ -117,7 +120,7 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
 
 if __name__ == "__main__":
 # Distances between starting positions and trash cans.
-    distancemat = [
+    distancemat =  [
         [0, 10,  2,  4,  5,  7],
         [10, 0,  5,  6,  6,  3],
         [2,  5,  0,  4,  4,  5],
@@ -125,6 +128,6 @@ if __name__ == "__main__":
         [5,  6,  4,  2,  0,  2],
         [7,  3,  5,  3,  2,  0]]
 
-    plan = get_plan(distancemat, 2, True)
+    plan = get_plan(distancemat, 3, True)
     print("-------")
     print(plan)
