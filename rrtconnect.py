@@ -134,7 +134,6 @@ def connect(i, j):
     count = 0
     while obstaclefree(node_lists[i][-1].coord, newpoint) and insideMap(newpoint) and count < 5:
         if point_coll(newpoint, node_lists[j][-1].coord, 10):
-            print(i, j)
             pygame.draw.line(screen, (50,150,200), node_lists[i][-1].coord, newpoint)
             
             node_lists[i].append(Node(node_lists[j][-1].coord,node_lists[i][-1]))
@@ -217,9 +216,11 @@ def main():
                             continue
                         #else:
                         if connect(i, j):
-                                dist_matrix[i, j] = calc_dist(node_lists[i][-1])
-                                dist_matrix[j, i] = dist_matrix[i, j]
-                                #print(dist_matrix)
+                                dist = calc_dist(node_lists[i][-1])
+                                if dist <= 9 or dist >= 11:
+                                    dist_matrix[i, j] = dist
+                                    dist_matrix[j, i] = dist_matrix[i, j]
+                                    print(dist_matrix)
 
 
                     """
