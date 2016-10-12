@@ -249,7 +249,7 @@ def main():
                         if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
                             dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
-                            print(dist_matrix)
+                            print(dist_matrix.astype(int))
                             print(obj)
 
 
@@ -281,7 +281,7 @@ def main():
 
     if(goal):
         print("Goal reached in %.2f seconds, some info" % (time.time() - start_time))
-        print(dist_matrix)
+        print(dist_matrix.astype(int))
         taskalloc.get_plan(dist_matrix.astype(int), N_ROBOTS, True)
         pygame.time.wait(3000)
     #pygame.quit()
