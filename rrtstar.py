@@ -22,7 +22,7 @@ ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
 MAX_NODES = 100000
 STEP_LENGTH = 10.0
-RADIUS = 3
+RADIUS = 2
 
 screen = pygame.display.set_mode(SIZE)
 clock = pygame.time.Clock()
@@ -234,7 +234,6 @@ def main():
                     newnode = Node(new_step(parent.coord, rand))
                     newnode, parent = chooseParent(parent, newnode, i)
                     node_lists[i].append(newnode)
-                    pygame.draw.line(screen, (255,255,255), newnode.coord, parent.coord)
 
                     rewire(newnode, i)
 

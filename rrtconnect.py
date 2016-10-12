@@ -13,8 +13,8 @@ import random
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 2
-N_ROBOTS = 1
+N_TRASHCANS = 7
+N_ROBOTS = 3
 N_OBJECTS = N_TRASHCANS+N_ROBOTS
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
@@ -115,7 +115,7 @@ def calc_dist(curr_node):
 
     # Calculate distance (and draw path)
     while curr_node.parent != None:
-        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 5)
+        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 1)
         goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
         curr_node = curr_node.parent
 
@@ -130,21 +130,28 @@ def connect(i, j):
     direction = direction#/np.linalg.norm(direction)
     #print(direction)
     temp = None
-    newpoint = node_lists[i][-1].coord + direction
-    while obstaclefree(node_lists[i][-1].coord, newpoint) and insideMap(newpoint):
+    newpoint = node_lists[i][-1].coord - direction
+    count = 0
+    while obstaclefree(node_lists[i][-1].coord, newpoint) and insideMap(newpoint) and count < 5:
         if point_coll(newpoint, node_lists[j][-1].coord, 10):
+            print(i, j)
+            pygame.draw.line(screen, (50,150,200), node_lists[i][-1].coord, newpoint)
+            
             node_lists[i].append(Node(node_lists[j][-1].coord,node_lists[i][-1]))
-            temp = node_lists[j][-1].parent
+            
+            temp = node_lists[i][-1].parent
             while temp.parent != None:
                 node_lists[i].append(Node(temp.coord, node_lists[i][-1]))
                 temp = temp.parent
-            break
-
+            return True
+            
+            
         else:
             pygame.draw.line(screen, (255, 255, 255), node_lists[i][-1].coord, newpoint)
             node_lists[i].append(Node(newpoint, node_lists[i][-1]))
-            newpoint = newpoint + direction 
-    
+            newpoint = newpoint - direction 
+        count += 1 
+    return False
     #while obstaclefree(p1, newpoint) and insideMap(newpoint): # Kolla så de inte hamnar utanför screen!!
 
 def main():
@@ -206,12 +213,12 @@ def main():
                     pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
                     
                     for j in range(N_OBJECTS):
-                        if i == j:
+                        if i == j or dist_matrix[i,j] != 0:
                             continue
                         #else:
-                        connect(i, j)
-                                #dist_matrix[i, j] = calc_dist(node_lists[i][-1])
-                                #dist_matrix[j, i] = dist_matrix[i, j]
+                        if connect(i, j):
+                                dist_matrix[i, j] = calc_dist(node_lists[i][-1])
+                                dist_matrix[j, i] = dist_matrix[i, j]
                                 #print(dist_matrix)
 
 
@@ -226,7 +233,6 @@ def main():
                             print(obj)
                     """
         #clock.tick(3)
-        pygame.time.wait(1000)
         for idx, i in enumerate(robots):
             pygame.draw.rect(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
