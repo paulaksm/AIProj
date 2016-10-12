@@ -12,6 +12,7 @@ import numpy as np
 import random
 import taskalloc
 import time
+import argparse
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
@@ -42,7 +43,7 @@ def eucl_distSq(p1,p2):
     "calculates the squared euclidian distance between two points"
     return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
 
-def init_map():
+def init_map(filename):
     "inits the map"
 
     global walls
@@ -51,7 +52,7 @@ def init_map():
     trashcans = []
     robots = [] 
 
-    f = open('test.map', 'r')
+    f = open(filename, 'r')
     for line in f:
         obj_list = line.split( )
         check_obj = obj_list[0]
@@ -170,10 +171,13 @@ def calc_dist(curr_node):
     return goal_dist
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="the file used to init the map")
+    args = parser.parse_args()
     pygame.init()
 
     start_time = time.time()
-    robots, trashcans = init_map()
+    robots, trashcans = init_map(args.file)
 
     N_ROBOTS = len(robots)
     N_TRASHCANS = len(trashcans)
