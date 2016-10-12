@@ -15,9 +15,9 @@ import time
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 5
-N_ROBOTS = 3
-N_OBJECTS = N_TRASHCANS+N_ROBOTS
+#N_TRASHCANS = 5
+#N_ROBOTS = 3
+#N_OBJECTS = N_TRASHCANS+N_ROBOTS
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
 MAX_NODES = 100000
@@ -44,16 +44,35 @@ def eucl_distSq(p1,p2):
 
 def init_map():
     "inits the map"
+
     global walls
     global buff_walls
+    
+    trashcans = []
+    robots = [] 
 
-    add_wall((50,80),(120,320))
-    add_wall((0,380),(50,20))
-    add_wall((400,200),(400,200))
-    add_wall((200,0),(100,175))
+    f = open('test.map', 'r')
+    for line in f:
+        obj_list = line.split( )
+        check_obj = obj_list[0]
+        if (check_obj == 'r'):
+            robots.append((int(obj_list[1]), int(obj_list[2])))
+        elif (check_obj == 't'):
+            trashcans.append((int(obj_list[1]), int(obj_list[2])))
+        elif (obj_list[0] == 'w'):
+            add_wall((int(obj_list[1]),int(obj_list[2])), (int(obj_list[3]),int(obj_list[4])))
+
+    f.close()
+
+
+    #add_wall((50,80),(120,320))
+    #add_wall((0,380),(50,20))
+    #add_wall((400,200),(400,200))
+    #add_wall((200,0),(100,175))
 
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
+    return robots, trashcans
 
 def add_wall(corner, size):
     walls.append(pygame.Rect(corner, size))
@@ -154,26 +173,31 @@ def main():
     pygame.init()
 
     start_time = time.time()
+    robots, trashcans = init_map()
+
+    N_ROBOTS = len(robots)
+    N_TRASHCANS = len(trashcans)
+    N_OBJECTS = N_TRASHCANS+N_ROBOTS
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
-    init_map()
 
     node_lists = [[] for i in range(N_OBJECTS)]
 
-    "Initialize robots randomly"
-    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    
+    "Initialize robots"
+    #robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
     for i in range(N_ROBOTS):
-        while collides((robots[i][0], robots[i][1])):
-            robots[i] = np.random.randint(50, 600-50, 2)
         node_lists[i].append(Node(robots[i], None))
 
-    "Initialize trashcans randomly"
-    trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
+    "Initialize trashcans"
+    #trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
     for i in range(N_TRASHCANS):
-        while collides((trashcans[i][0], trashcans[i][1])):
-            trashcans[i] = np.random.randint(50, 600-50,2)
+    #    while collides((trashcans[i][0], trashcans[i][1])):
+    #        trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None, None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
+    
+    
 
     curr_state = 'init'
     running = True
