@@ -175,7 +175,7 @@ def main():
         trashcan_status.append((trashcans[i], False, Node(None, None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
 
-    curr_state = 'build'
+    curr_state = 'init'
     running = True
     goal = False
 
@@ -201,6 +201,7 @@ def main():
                         rand = new_coord()
                         parent = node_lists[i][0]
 
+                        # Find closest node in current tree 
                         for p in node_lists[i]:
                             if eucl_distSq(p.coord, rand) <= eucl_distSq(parent.coord, rand):
                                 newPoint = new_step(p.coord, rand)
@@ -208,10 +209,12 @@ def main():
                                     parent = p
                                     foundNext = True
 
+                    # Connect new point to closest node 
                     newnode = new_step(parent.coord, rand)
                     node_lists[i].append(Node(newnode,parent))
                     #pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
 
+                    # Check if new point collides with any other object 
                     for obj in range(N_OBJECTS):
                         if (obj == i):
                             continue
@@ -222,54 +225,20 @@ def main():
                             print(obj)
 
 
-                    #    curr_state = 'goal_found'
+        # Draw trashcans and robots
+        if curr_state == 'init': 
+            for idx, i in enumerate(robots):
+                pygame.draw.ellipse(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
-        if curr_state == 'goal_found':
-            for numerator in range(N_TRASHCANS):
-                goal_dist.append(0)
-                curr_node = trashcan_status[numerator][2]
-                while curr_node.parent != None:
-                    if curr_node.parent.parent != None and obstaclefree(curr_node.coord, curr_node.parent.parent.coord):
-                        curr_node.parent = curr_node.parent.parent
-                    else:
-                        curr_node = curr_node.parent
+            for idx, i in enumerate(trashcans):
+                pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
+            curr_state = 'build'
 
-                curr_node = trashcan_status[numerator][2]
-                while curr_node.parent != None:
-                    pygame.draw.line(screen, (150, 50, 0), curr_node.coord, curr_node.parent.coord, 5)
-                    goal_dist[numerator] += eucl_dist(curr_node.coord, curr_node.parent.coord)
-                    curr_node = curr_node.parent
-            trashcans_found = 0;
-            for i in range(N_TRASHCANS):
-                trashcan_status[i] = (trashcans[i], False, nodes[-1])
-            print(curr_robot)
-            if curr_robot != N_ROBOTS-1:
-                curr_state = 'build'
-            else:
-                goal = True
-                running = False
-            nodes = []
-            curr_robot += 1
-                #trashcans[0].coord[0] +=
-
-            #running = False
-
-        for idx, i in enumerate(robots):
-            pygame.draw.ellipse(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
-
-        for idx, i in enumerate(trashcans):
-            pygame.draw.circle(screen, (0, 255, 255) , [i[0],i[1]], 10)
-        #    if (pygame.Rect(i[0],i[1],10,10).colliderect(objRobot)):
-        #        trashcans = np.delete(trashcans, np.s_[idx:idx+1], axis=0)
-        #        print("Checked trashcan", idx)
-
-        #pygame.draw.rect(screen, (255, 0, 255), objRobot)
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 running = False
 
-
-
+        # Check if all paths found
         NODES_DONE = 0
         for i in range(N_OBJECTS):
             for j in range(N_OBJECTS):
@@ -285,7 +254,7 @@ def main():
     if(goal):
         print("Goal reached in %.2f seconds, some info" % (time.time() - start_time))
         print(dist_matrix)
-        taskalloc.get_plan(dist_matrix, N_ROBOTS, True)
+        taskalloc.get_plan(dist_matrix.astype(int), N_ROBOTS, True)
         pygame.time.wait(3000)
     #pygame.quit()
 
