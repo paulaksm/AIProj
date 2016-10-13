@@ -7,7 +7,7 @@ import numpy as np
 
 
 def problem(distancemat, agentcount, verbose=True):
-    distmat = np.matrix(distancemat)
+    trashcount = len(distancemat) - agentcount
     domain = Domain((
         Action(
             "pick-up",
@@ -19,6 +19,7 @@ def problem(distancemat, agentcount, verbose=True):
             ),
             preconditions=(
                 ("at", "A1", "T1"),
+                ("unchecked", "T2"), # Klarar inte neg(("checked","T2"))
             ),
             effects=(
                 # This predicate is used to find the distance travelled
@@ -30,6 +31,7 @@ def problem(distancemat, agentcount, verbose=True):
                 ("at", "A1", "T2"),
                 # T2 is checked.
                 ("checked", "T2"),
+                neg(("unchecked", "T2")),
             )
         ),
     ))
@@ -42,23 +44,22 @@ def problem(distancemat, agentcount, verbose=True):
             # treated as trash cans.
             "trash_can":  [i for i in range(len(distancemat))],
         },
-        init=[("at", i, i) for i in range(agentcount)],
-        goal=[("checked", agentcount + i) for i in range(len(distancemat)-agentcount)]
+        init=[("at", i, i) for i in range(agentcount)] +\
+            [("unchecked", i + agentcount) for i in range(trashcount)],
+        goal=[("checked", i + agentcount) for i in range(trashcount)]
     )
-
     # Heuristics based on the agent that has travelled the farthest
     def heuristic(state):
         #print distancemat
-        cost = -distmat.max()
         agent2cost = {}
         for p in state.predicates:
             if p[0] == "travelled":
                 if not(p[1] in agent2cost):
-                    agent2cost[p[1]] = cost
+                    agent2cost[p[1]] = 0
                 agent2cost[p[1]] += distancemat[p[2]][p[3]]
                 #agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
         # add cost to values list in case agent2cost is empty
-        return max(agent2cost.values() + [cost])
+        return max(agent2cost.values() + [0])
 
     return planner(problem,
                    heuristic=heuristic,
@@ -73,7 +74,6 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
     assert(agentcount > 0)
 
     plan = problem(distancemat, agentcount, verbose)
-
     if plan is None:
         return dict()
     #   (agent, from, to)
@@ -128,6 +128,6 @@ if __name__ == "__main__":
         [5,  6,  4,  2,  0,  2],
         [7,  3,  5,  3,  2,  0]]
 
-    plan = get_plan(distancemat, 3, True)
+    plan = get_plan(distancemat, 2, True)
     print("-------")
     print(plan)
