@@ -48,9 +48,9 @@ def init_map(filename):
 
     global walls
     global buff_walls
-    
+
     trashcans = []
-    robots = [] 
+    robots = []
 
     f = open(filename, 'r')
     for line in f:
@@ -64,6 +64,10 @@ def init_map(filename):
             add_wall((int(obj_list[1]),int(obj_list[2])), (int(obj_list[3]),int(obj_list[4])))
 
     f.close()
+    for r in robots:
+        assert not(collides(r)), "robot at %s collides with a wall " % str(r)
+    for t in trashcans:
+        assert not(collides(t)), "trashcan at %s collides with a wall " % str(t)
 
 
     #add_wall((50,80),(120,320))
@@ -84,7 +88,8 @@ def add_wall(corner, size):
 def collides(p):
     "checks if a rectangle collides with the walls"
     for i in buff_walls:
-        if i.collidepoint(p):
+        if i.topright[0] <= p[0] <= i.bottomright[0] and \
+                i.topright[1] <= p[1] <= i.bottomright[1]:
             return True
     return False
 
@@ -187,7 +192,7 @@ def main():
 
     node_lists = [[] for i in range(N_OBJECTS)]
 
-    
+
     "Initialize robots"
     #robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
     for i in range(N_ROBOTS):
@@ -200,8 +205,8 @@ def main():
     #        trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None, None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
-    
-    
+
+
 
     curr_state = 'init'
     running = True
@@ -229,7 +234,7 @@ def main():
                         rand = new_coord()
                         parent = node_lists[i][0]
 
-                        # Find closest node in current tree 
+                        # Find closest node in current tree
                         for p in node_lists[i]:
                             if eucl_distSq(p.coord, rand) <= eucl_distSq(parent.coord, rand):
                                 newPoint = new_step(p.coord, rand)
@@ -237,12 +242,12 @@ def main():
                                     parent = p
                                     foundNext = True
 
-                    # Connect new point to closest node 
+                    # Connect new point to closest node
                     newnode = new_step(parent.coord, rand)
                     node_lists[i].append(Node(newnode,parent))
                     #pygame.draw.line(screen, (255,255,255), parent.coord, newnode)
 
-                    # Check if new point collides with any other object 
+                    # Check if new point collides with any other object
                     for obj in range(N_OBJECTS):
                         if (obj == i):
                             continue
@@ -254,7 +259,7 @@ def main():
 
 
         # Draw trashcans and robots
-        if curr_state == 'init': 
+        if curr_state == 'init':
             for idx, i in enumerate(robots):
                 pygame.draw.ellipse(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
