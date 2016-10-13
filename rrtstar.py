@@ -12,12 +12,13 @@ import numpy as np
 import random
 import taskalloc
 import time
+import argparse
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 7
-N_ROBOTS = 3
-N_OBJECTS = N_TRASHCANS+N_ROBOTS
+#N_TRASHCANS = 7
+#N_ROBOTS = 3
+#N_OBJECTS = N_TRASHCANS+N_ROBOTS
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
 MAX_NODES = 100000
@@ -29,7 +30,7 @@ clock = pygame.time.Clock()
 
 walls = []
 buff_walls = []
-node_lists = [[] for i in range(N_OBJECTS)]
+#node_lists = [[] for i in range(N_OBJECTS)]
 
 class Node(object):
     cost = 0
@@ -45,18 +46,41 @@ def eucl_distSq(p1,p2):
     "calculates the squared euclidian distance between two points"
     return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
 
-def init_map():
+def init_map(filename):
     "inits the map"
+
     global walls
     global buff_walls
 
-    add_wall((50,80),(120,320))
-    add_wall((0,380),(50,20))
-    add_wall((400,200),(400,200))
-    add_wall((200,0),(100,175))
+    trashcans = []
+    robots = []
+
+    f = open(filename, 'r')
+    for line in f:
+        obj_list = line.split( )
+        check_obj = obj_list[0]
+        if (check_obj == 'r'):
+            robots.append((int(obj_list[1]), int(obj_list[2])))
+        elif (check_obj == 't'):
+            trashcans.append((int(obj_list[1]), int(obj_list[2])))
+        elif (obj_list[0] == 'w'):
+            add_wall((int(obj_list[1]),int(obj_list[2])), (int(obj_list[3]),int(obj_list[4])))
+
+    f.close()
+    for r in robots:
+        assert not(collides(r)), "robot at %s collides with a wall " % str(r)
+    for t in trashcans:
+        assert not(collides(t)), "trashcan at %s collides with a wall " % str(t)
+
+
+    #add_wall((50,80),(120,320))
+    #add_wall((0,380),(50,20))
+    #add_wall((400,200),(400,200))
+    #add_wall((200,0),(100,175))
 
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
+    return robots, trashcans
 
 def add_wall(corner, size):
     walls.append(pygame.Rect(corner, size))
@@ -153,7 +177,7 @@ def calc_dist(curr_node):
 
     return goal_dist
 
-def rewire(newnode, i):
+def rewire(newnode, i, node_lists):
     for k in range(len(node_lists[i])):
         temp = node_lists[i][k]
         dist = eucl_dist(temp.coord, newnode.coord)
@@ -162,7 +186,7 @@ def rewire(newnode, i):
             temp.cost = newnode.cost + dist
             node_lists[i][k] = temp
 
-def chooseParent(parent, newnode, i):
+def chooseParent(parent, newnode, i, node_lists):
     for k in node_lists[i]:
         dist = eucl_dist(k.coord, newnode.coord)
         if dist < RADIUS and k.cost+dist < parent.cost+eucl_dist(parent.coord, newnode.coord):
@@ -172,29 +196,38 @@ def chooseParent(parent, newnode, i):
         return newnode, parent
 
 
-def main():
+def main(): 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="the file used to init the map")
+    args = parser.parse_args()
     pygame.init()
 
     start_time = time.time()
+    robots, trashcans = init_map(args.file)
+
+    N_ROBOTS = len(robots)
+    N_TRASHCANS = len(trashcans)
+    N_OBJECTS = N_TRASHCANS+N_ROBOTS
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
-    init_map()
+
+    node_lists = [[] for i in range(N_OBJECTS)]
 
 
-    "Initialize robots randomly"
-    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    "Initialize robots"
+    #robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
     for i in range(N_ROBOTS):
-        while collides((robots[i][0], robots[i][1])):
-            robots[i] = np.random.randint(50, 600-50, 2)
         node_lists[i].append(Node(robots[i]))
 
-    "Initialize trashcans randomly"
-    trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
+    "Initialize trashcans"
+    #trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
     for i in range(N_TRASHCANS):
-        while collides((trashcans[i][0], trashcans[i][1])):
-            trashcans[i] = np.random.randint(50, 600-50,2)
+    #    while collides((trashcans[i][0], trashcans[i][1])):
+    #        trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i]))
+
+
 
     curr_state = 'init'
     running = True
@@ -206,7 +239,6 @@ def main():
 
     goal_dist = []
     nodes = []
-
 
     while running:
 
@@ -232,10 +264,10 @@ def main():
 
                     # Connect new point to closest node 
                     newnode = Node(new_step(parent.coord, rand))
-                    newnode, parent = chooseParent(parent, newnode, i)
+                    newnode, parent = chooseParent(parent, newnode, i, node_lists)
                     node_lists[i].append(newnode)
 
-                    rewire(newnode, i)
+                    rewire(newnode, i, node_lists)
 
                     # Check if new point collides with any other object 
                     for obj in range(N_OBJECTS):
@@ -244,7 +276,7 @@ def main():
                         if point_coll(node_lists[obj][0].coord, newnode.coord, 10) and dist_matrix[i, obj] == 0:
                             dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
-                            print(dist_matrix)
+                            print(dist_matrix.astype(int))
                             print(obj)
 
 
@@ -276,7 +308,7 @@ def main():
 
     if(goal):
         print("Goal reached in %.2f seconds, some info" % (time.time() - start_time))
-        print(dist_matrix)
+        print(dist_matrix.astype(int))
         taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
         pygame.time.wait(3000)
     #pygame.quit()
