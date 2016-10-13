@@ -191,11 +191,12 @@ def calc_dist(curr_node):
 """ Tries to connect two nodes together trough a straight line
 """
 def connect(i, j, node_lists):
-    direction = np.array(node_lists[i][-1].coord)-np.array(node_lists[j][-1].coord)
-    direction = direction#/np.linalg.norm(direction)
+    direction = np.array(node_lists[j][-1].coord)-np.array(node_lists[i][-1].coord)
+    dir_length = sqrt(direction[0] * direction[0] + direction[1] * direction[1])
+    direction = STEP_LENGTH*(direction / dir_length)
     #print(direction)
     temp = None
-    newpoint = node_lists[i][-1].coord - direction
+    newpoint = node_lists[i][-1].coord + direction
     count = 0
     while obstaclefree(node_lists[i][-1].coord, newpoint) and insideMap(newpoint) and count < 5:
         if point_coll(newpoint, node_lists[j][-1].coord, 10):
@@ -203,7 +204,7 @@ def connect(i, j, node_lists):
             
             node_lists[i].append(Node(node_lists[j][-1].coord,node_lists[i][-1]))
             
-            temp = node_lists[i][-1].parent
+            temp = node_lists[j][-1]
             while temp.parent != None:
                 node_lists[i].append(Node(temp.coord, node_lists[i][-1]))
                 temp = temp.parent
@@ -211,9 +212,9 @@ def connect(i, j, node_lists):
             
             
         else:
-            pygame.draw.line(screen, (255, 255, 255), node_lists[i][-1].coord, newpoint)
+            #pygame.draw.line(screen, (255, 255, 255), node_lists[i][-1].coord, newpoint)
             node_lists[i].append(Node(newpoint, node_lists[i][-1]))
-            newpoint = newpoint - direction 
+            newpoint = newpoint + direction 
         count += 1 
     return False
     #while obstaclefree(p1, newpoint) and insideMap(newpoint): # Kolla så de inte hamnar utanför screen!!
@@ -315,10 +316,10 @@ def main():
                         #else:
                         if connect(i, j, node_lists):
                                 dist = calc_dist(node_lists[i][-1])
-                                if dist <= 9 or dist >= 11:
-                                    dist_matrix[i, j] = dist
-                                    dist_matrix[j, i] = dist_matrix[i, j]
-                                    print(dist_matrix.astype(int))
+                                #if dist <= 9 or dist >= 11:
+                                dist_matrix[i, j] = dist
+                                dist_matrix[j, i] = dist_matrix[i, j]
+                                #print(dist_matrix.astype(int))
 
 
                     """
