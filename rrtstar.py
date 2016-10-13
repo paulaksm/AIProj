@@ -202,11 +202,26 @@ def main():
     args = parser.parse_args()
     pygame.init()
 
-    start_time = time.time()
-    robots, trashcans = init_map(args.file)
+    N_ROBOTS = -1
+    N_TRASHCANS = -1
 
-    N_ROBOTS = len(robots)
-    N_TRASHCANS = len(trashcans)
+    start_time = time.time()
+    if args.file == 'RANDOM':
+        N_ROBOTS = 3
+        N_TRASHCANS = 5
+        add_wall((50,80),(120,320))
+        add_wall((0,380),(50,20))
+        add_wall((400,200),(400,200))
+        add_wall((200,0),(100,175))
+
+        for i in walls:
+            pygame.draw.rect(screen, (100, 100, 100), i)
+    else:
+        robots, trashcans = init_map(args.file)
+
+        N_ROBOTS = len(robots)
+        N_TRASHCANS = len(trashcans)
+    
     N_OBJECTS = N_TRASHCANS+N_ROBOTS
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
@@ -215,15 +230,21 @@ def main():
 
 
     "Initialize robots"
-    #robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    if args.file == 'RANDOM':
+        robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
     for i in range(N_ROBOTS):
+        if args.file == 'RANDOM':
+            while collides((robots[i][0], robots[i][1])):
+                robots[i] = np.random.randint(50, 600-50, 2)
         node_lists[i].append(Node(robots[i]))
 
     "Initialize trashcans"
-    #trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
+    if args.file == 'RANDOM':
+        trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
     for i in range(N_TRASHCANS):
-    #    while collides((trashcans[i][0], trashcans[i][1])):
-    #        trashcans[i] = np.random.randint(50, 600-50,2)
+        if args.file == 'RANDOM':
+            while collides((trashcans[i][0], trashcans[i][1])):
+                trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i]))
 
