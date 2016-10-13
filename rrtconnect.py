@@ -10,12 +10,15 @@ from pygame.locals import *
 import pygame
 import numpy as np
 import random
+import taskalloc
+import time
+import argparse
 from math import cos, sin, atan2, sqrt
 
 SIZE = WIDTH, HEIGHT = 600, 600
-N_TRASHCANS = 7
-N_ROBOTS = 3
-N_OBJECTS = N_TRASHCANS+N_ROBOTS
+#N_TRASHCANS = 7
+#N_ROBOTS = 3
+#N_OBJECTS = N_TRASHCANS+N_ROBOTS
 ROBOT_WIDTH = 20
 ROBOT_HEIGHT = 20
 MAX_NODES = 100000
@@ -25,8 +28,9 @@ screen = pygame.display.set_mode(SIZE)
 clock = pygame.time.Clock()
 
 walls = []
-node_lists = [[] for i in range(N_OBJECTS)]
-dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
+buff_walls = []
+#node_lists = [[] for i in range(N_OBJECTS)]
+#dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
 
 class Node(object):
     def __init__(self, coord, parent):
@@ -40,22 +44,54 @@ def eucl_dist(p1,p2):
 def eucl_distSq(p1, p2):
     return (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2
 
-def init_map():
+def init_map(filename):
     "inits the map"
-    global walls
 
-    walls.append(pygame.Rect((50,80),(120,320)))
-    walls.append(pygame.Rect((0,380),(50,20)))
-    walls.append(pygame.Rect((400,200),(400,200)))
-    walls.append(pygame.Rect((200,0),(100,175)))
+    global walls
+    global buff_walls
+
+    trashcans = []
+    robots = []
+
+    f = open(filename, 'r')
+    for line in f:
+        obj_list = line.split( )
+        check_obj = obj_list[0]
+        if (check_obj == 'r'):
+            robots.append((int(obj_list[1]), int(obj_list[2])))
+        elif (check_obj == 't'):
+            trashcans.append((int(obj_list[1]), int(obj_list[2])))
+        elif (obj_list[0] == 'w'):
+            add_wall((int(obj_list[1]),int(obj_list[2])), (int(obj_list[3]),int(obj_list[4])))
+
+    f.close()
+    for r in robots:
+        assert not(collides(r)), "robot at %s collides with a wall " % str(r)
+    for t in trashcans:
+        assert not(collides(t)), "trashcan at %s collides with a wall " % str(t)
+
+
+    #add_wall((50,80),(120,320))
+    #add_wall((0,380),(50,20))
+    #add_wall((400,200),(400,200))
+    #add_wall((200,0),(100,175))
 
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
+    return robots, trashcans
+
+def add_wall(corner, size):
+    walls.append(pygame.Rect(corner, size))
+    buff_corner = (corner[0] - ROBOT_WIDTH / 2, corner[1] - ROBOT_HEIGHT / 2)
+    buff_size = (size[0] + ROBOT_WIDTH, size[1] + ROBOT_HEIGHT)
+    buff_walls.append(pygame.Rect(buff_corner, buff_size))
+
+
 
 def collides(p):
     "checks if a rectangle collides with the walls"
-    for i in walls:
-        if i.colliderect(pygame.Rect([p[0] - ROBOT_WIDTH/2, p[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])):
+    for i in buff_walls:
+        if i.collidepoint(p):
             return True
     return False
 
@@ -81,16 +117,45 @@ def new_step(p1, p2):
         theta = atan2(p2[1]-p1[1],p2[0]-p1[0])
         return p1[0] + STEP_LENGTH*cos(theta), p1[1] + STEP_LENGTH*sin(theta)
 
+"""
+java.awt.geom.Line2D relativeCCW
+"""
+def relativeCCW(p1,p2,p):
+    a = p2[0] - p1[0], p2[1] - p1[1]
+    b = p[0] - p1[0], p[1] - p1[1]
+    ccw = b[0] * a[1] - b[1] * a[0]
+    if ccw == 0.0:
+        ccw = b[0] * a[0] + b[1] * a[1]
+        if ccw > 0.0:
+            b = b[0] - a[0], b[1] - a[1]
+            ccw = b[0] * a[0] + b[1] * a[1]
+            if ccw < 0.0:
+                ccw = 0.0
+    if ccw < 0:
+        return -1
+    if ccw > 0:
+        return 1
+    return 0
+
+"""
+java.awt.geom.Line2D linesIntersect
+"""
+def linesIntersect(p1, p2, p3, p4):
+    return ((relativeCCW(p1,p2,p3) * relativeCCW(p1,p2,p4) <= 0) and
+        (relativeCCW(p3,p4,p1) * relativeCCW(p3,p4,p2) <= 0))
+
 def obstaclefree(p1, p2):
     "checks if there are no walls between two points"
     t = np.arange(0, 1, 0.05)
-    for ti in t:
-        x = p1[0] + (p2[0] - p1[0]) * ti;
-        y = p1[1] + (p2[1] - p1[1]) * ti;
-        if collides((x,y)):
-            return False
-
+    for wall in buff_walls:
+        corners = [wall.topleft, wall.bottomleft, wall.bottomright,
+            wall.topright, wall.topleft]
+        for it in range(4):
+            if linesIntersect(p1, p2, corners[it], corners[it+1]):
+                return False
     return True
+
+
 
 def insideMap(p):
     x = p[0]
@@ -125,7 +190,7 @@ def calc_dist(curr_node):
 
 """ Tries to connect two nodes together trough a straight line
 """
-def connect(i, j):
+def connect(i, j, node_lists):
     direction = np.array(node_lists[i][-1].coord)-np.array(node_lists[j][-1].coord)
     direction = direction#/np.linalg.norm(direction)
     #print(direction)
@@ -154,26 +219,58 @@ def connect(i, j):
     #while obstaclefree(p1, newpoint) and insideMap(newpoint): # Kolla så de inte hamnar utanför screen!!
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="the file used to init the map")
+    args = parser.parse_args()
     pygame.init()
 
+    N_ROBOTS = -1
+    N_TRASHCANS = -1
+
+    start_time = time.time()
+    if args.file == 'RANDOM':
+        N_ROBOTS = 3
+        N_TRASHCANS = 5
+        add_wall((50,80),(120,320))
+        add_wall((0,380),(50,20))
+        add_wall((400,200),(400,200))
+        add_wall((200,0),(100,175))
+
+        for i in walls:
+            pygame.draw.rect(screen, (100, 100, 100), i)
+    else:
+        robots, trashcans = init_map(args.file)
+
+        N_ROBOTS = len(robots)
+        N_TRASHCANS = len(trashcans)
+    
+    N_OBJECTS = N_TRASHCANS+N_ROBOTS
+    dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
-    init_map()
+
+    node_lists = [[] for i in range(N_OBJECTS)]
 
 
-    "Initialize robots randomly"
-    robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
+    "Initialize robots"
+    if args.file == 'RANDOM':
+        robots = np.random.randint(50, 600-50, (N_ROBOTS, 2))
     for i in range(N_ROBOTS):
-        while collides((robots[i][0], robots[i][1])):
-            robots[i] = np.random.randint(50, 600-50, 2)
+        if args.file == 'RANDOM':
+            while collides((robots[i][0], robots[i][1])):
+                robots[i] = np.random.randint(50, 600-50, 2)
         node_lists[i].append(Node(robots[i], None))
 
-    "Initialize trashcans randomly"
-    trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
+    "Initialize trashcans"
+    if args.file == 'RANDOM':
+        trashcans = np.random.randint(50, 600-50, (N_TRASHCANS, 2))
     for i in range(N_TRASHCANS):
-        while collides((trashcans[i][0], trashcans[i][1])):
-            trashcans[i] = np.random.randint(50, 600-50,2)
+        if args.file == 'RANDOM':
+            while collides((trashcans[i][0], trashcans[i][1])):
+                trashcans[i] = np.random.randint(50, 600-50,2)
         trashcan_status.append((trashcans[i], False, Node(None, None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
+
+
 
     curr_state = 'build'
     running = True
@@ -182,8 +279,10 @@ def main():
     goal_node = Node(None, None)
     count = 0
 
+
     goal_dist = []
     nodes = []
+
 
     while running:
 
@@ -198,7 +297,6 @@ def main():
                     while foundNext == False:
                         rand = new_coord()
                         parent = node_lists[i][0]
-                        
                         for p in node_lists[i]:
                             if eucl_dist(p.coord, rand) <= eucl_dist(parent.coord, rand):
                                 newPoint = new_step(p.coord, rand)
@@ -215,12 +313,12 @@ def main():
                         if i == j or dist_matrix[i,j] != 0:
                             continue
                         #else:
-                        if connect(i, j):
+                        if connect(i, j, node_lists):
                                 dist = calc_dist(node_lists[i][-1])
                                 if dist <= 9 or dist >= 11:
                                     dist_matrix[i, j] = dist
                                     dist_matrix[j, i] = dist_matrix[i, j]
-                                    print(dist_matrix)
+                                    print(dist_matrix.astype(int))
 
 
                     """
@@ -257,9 +355,11 @@ def main():
         pygame.display.update()
 
     if(goal):
-        print("Goal reached in blabla sec, some info")
-        print(dist_matrix)
+        print("Goal reached in %.2f seconds, some info" % (time.time() - start_time))
+        print(dist_matrix.astype(int))
+        taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
         pygame.time.wait(3000)
+
     #pygame.quit()
 
 if __name__ == '__main__':
