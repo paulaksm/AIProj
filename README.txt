@@ -1,4 +1,18 @@
-﻿
+﻿Team 10
+
+Alex Sundström
+alexsu@kth.se
+
+Tim Olsson
+tiol@kth.se
+
+Konrad Magnusson
+konradma@kth.se
+
+Henrik Karlsson
+henrik10@kth.se
+
+
 We coded this project in Python 2. 
 For this project we coded the RRT algorithm ourselves based off the sources we found. 
 For the pddl we used a library called PyDDL. 
