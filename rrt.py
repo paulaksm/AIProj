@@ -1,7 +1,7 @@
 #! /usr/bin/env python2
 # coding=utf8
 '''
-This file performes the pathfinding part of the application suing rrt
+This file performes the pathfinding part of the application using rrt
 This version of the file uses the pygame package to give us a visual representation
 of the actions done. We found this usefull for debugging and creating the input.
 '''
@@ -71,7 +71,7 @@ def init_map(filename):
     for t in trashcans:
         assert not(collides(t)), "trashcan at %s collides with a wall " % str(t)
 
-    "draws the wall using pygame"
+    "draws the walls using pygame"
     for i in walls:
         pygame.draw.rect(screen, (100, 100, 100), i)
     return robots, trashcans
@@ -258,7 +258,7 @@ def main():
                         if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
                             dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
-                            "uncomment these to see the distance matrix build itself"
+                            "uncomment this to see the distance matrix build itself"
                             #print(dist_matrix.astype(int))
 
 
