@@ -10,7 +10,7 @@ def problem(distancemat, agentcount, verbose=True):
     trashcount = len(distancemat) - agentcount
     domain = Domain((
         Action(
-            "pick-up",
+            "Check",
             # Send agent A1 from T1 to pick up trash at T2
             parameters=(
                 ("agent", "A1"),
