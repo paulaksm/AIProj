@@ -170,12 +170,39 @@ def calc_dist(curr_node):
 
     "Calculate distance (and draw path)"
     while curr_node.parent != None:
-        pygame.draw.line(screen, (150, 100, 50), curr_node.coord, curr_node.parent.coord, 1)
         goal_dist += eucl_dist(curr_node.coord, curr_node.parent.coord)
         curr_node = curr_node.parent
 
 
     return goal_dist
+
+def get_path(curr_node):
+    path = [curr_node]
+    while path[-1].parent != None:
+        path.append(path[-1].parent)
+    return path
+
+"Nice visible colors"
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
+             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
+             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
+             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
+             (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+
+def draw_alloc(alloc_dict, path_matrix):
+    "draw the paths allocated to the robots"
+    agents = [agent for agent in alloc_dict if isinstance(agent, int)]
+    for ind, agent in enumerate(agents):
+        points = [agent] + alloc_dict[agent]
+        color = tableau20[ind%20]
+        for i in range(len(points)-1):
+            path = path_matrix[points[i]][points[i+1]]
+            draw_path(path,color,2)
+
+def draw_path(path, color=(150, 100, 50), thickness = 1):
+    "draws a path with specified color and thickness"
+    for i in range(len(path) - 1):
+        pygame.draw.line(screen, color, path[i].coord, path[i+1].coord, thickness)
 
 def rewire(newnode, i, node_lists):
     "used in rrt* to rewire the nodes"
@@ -197,8 +224,7 @@ def chooseParent(parent, newnode, i, node_lists):
         newnode.parent = parent
         return newnode, parent
 
-
-def main(): 
+def main():
     "init the argparser which is used to get the filename for the test case"
     parser = argparse.ArgumentParser()
     parser.add_argument("file", help="the file used to init the map")
@@ -230,9 +256,10 @@ def main():
 
         N_ROBOTS = len(robots)
         N_TRASHCANS = len(trashcans)
-    
+
     N_OBJECTS = N_TRASHCANS+N_ROBOTS
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
+    path_matrix = [[[] for j in range(N_OBJECTS)] for i in range(N_OBJECTS)]
     trashcan_status = []
 
     node_lists = [[] for i in range(N_OBJECTS)]
@@ -259,7 +286,9 @@ def main():
         trashcan_status.append((trashcans[i], False, Node(None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i]))
 
-
+    if i in range(N_ROBOTS):
+        if j in range(N_ROBOTS):
+            dist_matrix[i][j] = 10**14
 
     curr_state = 'init'
     running = True
@@ -308,12 +337,15 @@ def main():
                         if point_coll(node_lists[obj][0].coord, newnode.coord, 10) and dist_matrix[i, obj] == 0:
                             dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
+                            path_matrix[obj][i] = get_path(node_lists[i][-1])
+                            path_matrix[i][obj] = path_matrix[obj][i]
+                            draw_path(path_matrix[obj][i])
                             "can uncomment this to see the distance matrix build itself"
                             #print(dist_matrix.astype(int))
 
 
         "Draw trashcans and robots"
-        if curr_state == 'init': 
+        if curr_state == 'init':
             for idx, i in enumerate(robots):
                 pygame.draw.ellipse(screen, (150, 100, 150), [i[0] - ROBOT_WIDTH/2, i[1] - ROBOT_HEIGHT/2, ROBOT_WIDTH, ROBOT_HEIGHT])
 
@@ -343,9 +375,11 @@ def main():
         "the distance matrix is complete, send input to planner"
         print("Goal reached in %.2f seconds" % (time.time() - start_time))
         print(dist_matrix.astype(int))
-        taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
+        alloc_dict = taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
+        draw_alloc(alloc_dict, path_matrix)
+        pygame.display.update()
         "pauses the pygame window so you can look at the finished rrt*"
-        pygame.time.wait(3000)
+        pygame.time.wait(10000)
     #pygame.quit()
 
 if __name__ == '__main__':
