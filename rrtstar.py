@@ -286,6 +286,7 @@ def main():
         trashcan_status.append((trashcans[i], False, Node(None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i]))
 
+    "Distance between robots"
     if i in range(N_ROBOTS):
         if j in range(N_ROBOTS):
             dist_matrix[i][j] = 10**14

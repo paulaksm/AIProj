@@ -155,7 +155,7 @@ def obstaclefree(p1, p2):
 def calc_dist(curr_node):
     "this calculates the distance between two points in the rrt"
     "It first 'prunes' the rrt to make sure the path is as simple as possible"
-    
+
     temp = curr_node
     goal_dist = 0
 
@@ -176,6 +176,34 @@ def calc_dist(curr_node):
 
 
     return goal_dist
+
+def get_path(curr_node):
+    path = [curr_node]
+    while path[-1].parent != None:
+        path.append(path[-1].parent)
+    return path
+
+"Nice visible colors"
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
+             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
+             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
+             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
+             (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+
+def draw_alloc(alloc_dict, path_matrix):
+    "draw the paths allocated to the robots"
+    agents = [agent for agent in alloc_dict if isinstance(agent, int)]
+    for ind, agent in enumerate(agents):
+        points = [agent] + alloc_dict[agent]
+        color = tableau20[ind%20]
+        for i in range(len(points)-1):
+            path = path_matrix[points[i]][points[i+1]]
+            draw_path(path,color,2)
+
+def draw_path(path, color=(150, 100, 50), thickness = 1):
+    "draws a path with specified color and thickness"
+    for i in range(len(path) - 1):
+        pygame.draw.line(screen, color, path[i].coord, path[i+1].coord, thickness)
 
 def main():
     "init the argparser which is used to get the filename for the test case"
@@ -199,6 +227,7 @@ def main():
     "some lists for trashcans and the nodes"
     trashcan_status = []
     node_lists = [[] for i in range(N_OBJECTS)]
+    path_matrix = [[[] for j in range(N_OBJECTS)] for i in range(N_OBJECTS)]
 
 
     "Initialize robots into nodes"
@@ -209,6 +238,11 @@ def main():
     for i in range(N_TRASHCANS):
         trashcan_status.append((trashcans[i], False, Node(None, None)))
         node_lists[i+N_ROBOTS].append(Node(trashcans[i], None))
+
+    "Distance between robots"
+    if i in range(N_ROBOTS):
+        if j in range(N_ROBOTS):
+            dist_matrix[i][j] = 10**14
 
     "some variables used to running the program"
     curr_state = 'init'
@@ -258,6 +292,9 @@ def main():
                         if point_coll(node_lists[obj][0].coord, newnode, 10) and dist_matrix[i, obj] == 0:
                             dist_matrix[i, obj] = calc_dist(node_lists[i][-1])
                             dist_matrix[obj, i] = dist_matrix[i, obj]
+                            path_matrix[obj][i] = get_path(node_lists[i][-1])
+                            path_matrix[i][obj] = path_matrix[obj][i]
+                            draw_path(path_matrix[obj][i])
                             "uncomment this to see the distance matrix build itself"
                             #print(dist_matrix.astype(int))
 
@@ -293,9 +330,11 @@ def main():
         "the distance matrix is complete, send input to planner"
         print("Goal reached in %.2f seconds" % (time.time() - start_time))
         print(dist_matrix.astype(int))
-        taskalloc.get_plan(dist_matrix.astype(int), N_ROBOTS, True)
-        "pauses the pygame window so you can look at the finished rrt"
-        pygame.time.wait(3000)
+        alloc_dict = taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
+        draw_alloc(alloc_dict, path_matrix)
+        pygame.display.update()
+        "pauses the pygame window so you can look at the finished rrt*"
+        pygame.time.wait(10000)
     #pygame.quit()
 
 if __name__ == '__main__':

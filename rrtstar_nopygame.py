@@ -208,7 +208,7 @@ def chooseParent(parent, newnode, i, node_lists):
         return newnode, parent
 
 
-def main(): 
+def main():
     "init the argparser which is used to get the filename for the test case"
     parser = argparse.ArgumentParser()
     parser.add_argument("file", help="the file used to init the map")
@@ -236,7 +236,7 @@ def main():
 
         N_ROBOTS = len(robots)
         N_TRASHCANS = len(trashcans)
-    
+
     N_OBJECTS = N_TRASHCANS+N_ROBOTS
     dist_matrix = np.zeros([N_OBJECTS, N_OBJECTS])
     trashcan_status = []
@@ -266,6 +266,10 @@ def main():
         node_lists[i+N_ROBOTS].append(Node(trashcans[i]))
 
 
+    "Distance between robots"
+    if i in range(N_ROBOTS):
+        if j in range(N_ROBOTS):
+            dist_matrix[i][j] = 10**14
 
     curr_state = 'init'
     running = True
@@ -318,7 +322,7 @@ def main():
                             #print(dist_matrix.astype(int))
 
         "this would draw the robots and trashcans if we used pygame"
-        if curr_state == 'init': 
+        if curr_state == 'init':
             curr_state = 'build'
 
         "Check if all paths found"

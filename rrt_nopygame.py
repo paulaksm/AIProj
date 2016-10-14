@@ -224,6 +224,10 @@ def main():
     goal_node = Node(None, None)
     count = 0
 
+    "Distance between robots"
+    if i in range(N_ROBOTS):
+        if j in range(N_ROBOTS):
+            dist_matrix[i][j] = 10**14
 
     goal_dist = []
     nodes = []
@@ -287,6 +291,6 @@ def main():
         print("Goal reached in %.2f seconds" % (time.time() - start_time))
         print(dist_matrix.astype(int))
         taskalloc.get_plan(dist_matrix.astype(int), N_ROBOTS, True)
- 
+
 if __name__ == '__main__':
     main()
