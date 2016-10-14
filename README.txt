@@ -60,6 +60,11 @@ When this is done you can run the files using the following commands (for these 
 or
 >python2 rrtstar_nppygame.py tk14.map
 
+for the rrtstar files you can also do
+>python2 rrtstar RANDOM
+
+to get random generation of trash cans and robots on in the "default.map" file
+
 Creating test cases:
 to create a testcase just make a file (we used the .map filetype but you can use whatever)
 to add a robot you need to add a line that looks like this:
