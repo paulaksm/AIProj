@@ -19,7 +19,7 @@ def problem(distancemat, agentcount, verbose=True):
             ),
             preconditions=(
                 ("at", "A1", "T1"),
-                neg(("unchecked", "T2")),
+                ("unchecked", "T2"),
             ),
             effects=(
                 # This predicate is used to find the distance travelled
