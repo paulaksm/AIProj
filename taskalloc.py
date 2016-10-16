@@ -22,9 +22,6 @@ def problem(distancemat, agentcount, verbose=True):
                 ("unchecked", "T2"),
             ),
             effects=(
-                # This predicate is used to find the distance travelled
-                # by the agent. (heuristic function)
-                ("travelled", "A1", "T1", "T2"),
                 # A1 is no longer at T1
                 neg(("at", "A1", "T1")),
                 # A1 is now at T2
@@ -44,24 +41,32 @@ def problem(distancemat, agentcount, verbose=True):
             # treated as trash cans.
             "trash_can":  [i for i in range(len(distancemat))],
         },
-        init=[("at", i, i) for i in range(agentcount)] +\
-            [("unchecked", i + agentcount) for i in range(trashcount)],
+        init=[("at", i, i) for i in range(agentcount)],
         goal=[("checked", i + agentcount) for i in range(trashcount)]
     )
     # Heuristics based on the agent that has travelled the farthest
     def heuristic(state):
         #print distancemat
         agent2cost = {}
-        total = 0
-        for p in state.predicates:
-            if p[0] == "travelled":
-                if not(p[1] in agent2cost):
-                    agent2cost[p[1]] = 0
-                agent2cost[p[1]] += distancemat[p[2]][p[3]]
-                total += distancemat[p[2]][p[3]]
-                #agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
+        unchecked = [p[1] for p in state.predicates if p[0] == "unchecked"]
+        at = [p[2] for p in state.predicates if p[0] == "at"]
+        heur = 0
+        if len(unchecked) != 0:
+            for i in unchecked:
+                untaken = [distancemat[i][j] for j in (at + unchecked) if i != j]
+                heur += min(untaken)
+        # Get the path taken
+        travelled = [p.sig for p in state.plan() if p.sig[0] == "Check"]
+        total_distance = 0
+        for p in travelled:
+            if not(p[1] in agent2cost):
+                agent2cost[p[1]] = 0
+            agent2cost[p[1]] += distancemat[p[2]][p[3]]
+            total_distance += distancemat[p[2]][p[3]]
+            #agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
         # add cost to values list in case agent2cost is empty
-        return max(agent2cost.values() + [0]) * 10**14 + total
+        cost = max(agent2cost.values() + [0])
+        return (cost + heur) * 10**14 + total_distance
 
     return planner(problem,
                    heuristic=heuristic,
