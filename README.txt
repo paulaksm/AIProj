@@ -1,3 +1,17 @@
+﻿Team 10
+
+Alex Sundström
+alexsu@kth.se
+
+Tim Olsson
+tiol@kth.se
+
+Konrad Magnusson
+konradma@kth.se
+
+Henrik Karlsson
+henrik10@kth.se
+
 
 We coded this project in Python 2. 
 For this project we coded the RRT algorithm ourselves based off the sources we found. 
@@ -59,3 +73,21 @@ When this is done you can run the files using the following commands (for these 
 
 or
 >python2 rrtstar_nppygame.py tk14.map
+
+for the rrtstar files you can also do
+>python2 rrtstar RANDOM
+
+to get random generation of trash cans and robots on in the "default.map" file
+
+Creating test cases:
+to create a testcase just make a file (we used the .map filetype but you can use whatever)
+to add a robot you need to add a line that looks like this:
+r <x-coord> <y-coord>
+
+to add a trash can you need to add a line like this:
+t <x-coord> <y-coord>
+
+to add a wall you add a line that looks like this:
+w <x-coord> <y-coord> <wall width> <wall height>
+
+make sure there are no empty lines!
