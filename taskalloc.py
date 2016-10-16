@@ -19,7 +19,7 @@ def problem(distancemat, agentcount, verbose=True):
             ),
             preconditions=(
                 ("at", "A1", "T1"),
-                ("unchecked", "T2"), # Klarar inte neg(("checked","T2"))
+                neg(("unchecked", "T2")),
             ),
             effects=(
                 # This predicate is used to find the distance travelled
@@ -52,14 +52,16 @@ def problem(distancemat, agentcount, verbose=True):
     def heuristic(state):
         #print distancemat
         agent2cost = {}
+        total = 0
         for p in state.predicates:
             if p[0] == "travelled":
                 if not(p[1] in agent2cost):
                     agent2cost[p[1]] = 0
                 agent2cost[p[1]] += distancemat[p[2]][p[3]]
+                total += distancemat[p[2]][p[3]]
                 #agent2cost[p[1]] += distancemat[p[2]-1][p[3]-1]
         # add cost to values list in case agent2cost is empty
-        return max(agent2cost.values() + [0])
+        return max(agent2cost.values() + [0]) * 10**14 + total
 
     return planner(problem,
                    heuristic=heuristic,
