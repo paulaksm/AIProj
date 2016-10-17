@@ -7,7 +7,10 @@ import numpy as np
 
 
 def problem(distancemat, agentcount, verbose=True):
+    agents = [i for i in range(agentcount)]
     trashcount = len(distancemat) - agentcount
+    trash_cans = [i + agentcount for i in range(trashcount)]
+    agentDict = dict([(i,0) for i in agents])
     domain = Domain((
         Action(
             "Check",
@@ -36,34 +39,25 @@ def problem(distancemat, agentcount, verbose=True):
         domain,
         {
             # List of all agents
-            "agent":  [i for i in range(agentcount)],
+            "agent":  agents,
             # list of trash cans. Note: Starting positions are
             # treated as trash cans.
             "trash_can":  [i for i in range(len(distancemat))],
         },
-        init=[("at", i, i) for i in range(agentcount)] + \
-                [("unchecked", i + agentcount) for i in range(trashcount)],
-        goal=[("checked", i + agentcount) for i in range(trashcount)]
+        init=[("at", i, i) for i in agents] + \
+                [("unchecked", i) for i in trash_cans],
+        goal=[("checked", i) for i in trash_cans]
     )
     # Heuristics based on the agent that has travelled the farthest
     def heuristic(state):
+        # copy prepared table
+        agent2cost = agentDict.copy()
         # calculate cost
-        agent2cost = dict([(i,0) for i in range(agentcount)])
-        # Get the path taken
-        travelled = [p.sig for p in state.plan()]
-        total_distance = 0
-        for p in travelled:
-            agent2cost[p[1]] += distancemat[p[2]][p[3]]
-            total_distance += distancemat[p[2]][p[3]]
-        # add cost to values list in case agent2cost is empty
-        # calculate heuristics
-        unchecked = [p[1] for p in state.predicates if p[0] == "unchecked"]
-        at = [p[2] for p in state.predicates if p[0] == "at"]
-        for i in unchecked:
-            minDist = min([distancemat[i][j] for j in (at + unchecked) if i != j])
-            minKey = min(agent2cost, key=agent2cost.get)
-            agent2cost[minKey] += minDist
-        return max(agent2cost.values()) * 10**14 + total_distance
+        for a in [action.sig for action in state.plan()]:
+            agent2cost[a[1]] += distancemat[a[2]][a[3]]
+        cost = max(agent2cost.values())
+        #heur = ?
+        return cost
 
     return planner(problem,
                    heuristic=heuristic,
@@ -83,34 +77,29 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
     #   (agent, from, to)
     #   ('a', 1, 3)
     # turn _grounded somthing into a tuple
-    tupledPlan = [tuple(re.sub(r'[(),]', " ", str(act)).split())
-                  for act in plan]
-
+    tupledPlan = [act.sig for act in plan]
+    # list of all agents
+    agents = [i for i in range(agentcount)]
     # initialize
     allocation_dict = dict()
-    for agent in range(agentcount):
-        allocation_dict[agent] = []
+    for agent in agents:
+        allocation_dict[agent] = list()
     # populate
+
     for action in tupledPlan:
         if pop:
-            allocation_dict[int(action[1])].insert(0, int(action[3]))
+            allocation_dict[action[1]].insert(0, action[3])
         else:
-            allocation_dict[int(action[1])].append(int(action[3]))
+            allocation_dict[action[1]].append(action[3])
 
-
-    agent2time = dict()
+    agent2time = dict([(i, 0) for i in agents])
     #  sum costs of this path (from the matrix)
     for act in tupledPlan:
-        # if not(act[0] == 'pick-up'): continue
-        agent, l1, l2 = act[1], int(act[2])-1, int(act[3])-1
-        if not(agent in agent2time):
-            agent2time[agent] = 0
-        agent2time[agent] += distancemat[l1][l2]
+        agent2time[act[1]] += distancemat[act[2]][act[3]]
 
     time = max(agent2time.values())
     totalDistance = sum(agent2time.values())
-    # We can give different weight to time and distance
-    # Currently, time is top priority
+    
     if verbose:
         print("time: %d,\tdistance: %d" % (time, totalDistance))
         for action in plan:
