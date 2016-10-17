@@ -50,25 +50,20 @@ def problem(distancemat, agentcount, verbose=True):
         # calculate cost
         agent2cost = dict([(i,0) for i in range(agentcount)])
         # Get the path taken
-        travelled = [p.sig for p in state.plan() if p.sig[0] == "Check"]
+        travelled = [p.sig for p in state.plan()]
         total_distance = 0
         for p in travelled:
             agent2cost[p[1]] += distancemat[p[2]][p[3]]
             total_distance += distancemat[p[2]][p[3]]
         # add cost to values list in case agent2cost is empty
-        cost = max(agent2cost.values())
         # calculate heuristics
-        buff = sum([cost - acost for acost in agent2cost.values()])
         unchecked = [p[1] for p in state.predicates if p[0] == "unchecked"]
         at = [p[2] for p in state.predicates if p[0] == "at"]
-        heur = -buff
         for i in unchecked:
-            paths = [distancemat[i][j] for j in (at + unchecked) if i != j]
-            heur += min(paths)
-        # return
-        if heur > 0:
-            return (cost + heur) * 10**14 + total_distance
-        return cost * 10**14 + total_distance
+            minDist = min([distancemat[i][j] for j in (at + unchecked) if i != j])
+            minKey = min(agent2cost, key=agent2cost.get)
+            agent2cost[minKey] += minDist
+        return max(agent2cost.values()) * 10**14 + total_distance
 
     return planner(problem,
                    heuristic=heuristic,
