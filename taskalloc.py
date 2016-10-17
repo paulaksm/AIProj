@@ -74,6 +74,7 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
     plan = problem(distancemat, agentcount, verbose)
     if plan is None:
         return dict()
+
     #   (agent, from, to)
     #   ('a', 1, 3)
     # turn _grounded somthing into a tuple
@@ -81,34 +82,28 @@ def get_plan(distancemat, agentcount , verbose=False, pop=False):
     # list of all agents
     agents = [i for i in range(agentcount)]
     # initialize
-    allocation_dict = dict()
-    for agent in agents:
-        allocation_dict[agent] = list()
-    # populate
-
-    for action in tupledPlan:
-        if pop:
-            allocation_dict[action[1]].insert(0, action[3])
-        else:
-            allocation_dict[action[1]].append(action[3])
-
+    alloc_dict = dict([(i, list()) for i in agents])
     agent2time = dict([(i, 0) for i in agents])
-    #  sum costs of this path (from the matrix)
+
+    # populate and calculate distance each agent has travelled
     for act in tupledPlan:
         agent2time[act[1]] += distancemat[act[2]][act[3]]
+        if pop:
+            alloc_dict[act[1]].insert(0, act[3])
+        else:
+            alloc_dict[act[1]].append(act[3])
 
     time = max(agent2time.values())
     totalDistance = sum(agent2time.values())
-    
+    alloc_dict["time"] = time
+    alloc_dict["distance"] = totalDistance
+
     if verbose:
         print("time: %d,\tdistance: %d" % (time, totalDistance))
-        for action in plan:
-            print(action)
+        for act in plan:
+            print(act)
 
-    allocation_dict["time"] = time
-    allocation_dict["distance"] = totalDistance
-
-    return allocation_dict
+    return alloc_dict
 
 
 if __name__ == "__main__":
