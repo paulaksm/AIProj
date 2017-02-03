@@ -200,12 +200,12 @@ def draw_alloc(alloc_dict, path_matrix):
             draw_path(path,color,2)
 
 def draw_path(path, color=(150, 100, 50), thickness = 1):
-    "draws a path with specified color and thickness"
+    """draws a path with specified color and thickness"""
     for i in range(len(path) - 1):
         pygame.draw.line(screen, color, path[i].coord, path[i+1].coord, thickness)
 
 def rewire(newnode, i, node_lists):
-    "used in rrt* to rewire the nodes"
+    """used in rrt* to rewire the nodes"""
     for k in range(len(node_lists[i])):
         temp = node_lists[i][k]
         dist = eucl_dist(temp.coord, newnode.coord)
@@ -376,7 +376,7 @@ def main():
         "the distance matrix is complete, send input to planner"
         print("Goal reached in %.2f seconds" % (time.time() - start_time))
         print(dist_matrix.astype(int))
-        alloc_dict = taskalloc.get_plan(dist_matrix.astype(int)/10, N_ROBOTS, True)
+        alloc_dict = taskalloc.get_plan(dist_matrix.astype(int) / 10, N_ROBOTS, True)
         draw_alloc(alloc_dict, path_matrix)
         pygame.display.update()
         "pauses the pygame window so you can look at the finished rrt*"
